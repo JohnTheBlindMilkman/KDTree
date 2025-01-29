@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(KDTree)
 
-include(FetchContent)
-include(cmake/Doxygen.cmake)
-
 # defining options which can be enabled during building
 option(KDTREE_ENABLE_DOXYGEN "Enable doxygen" ON)
 option(KDTREE_ENABLE_TESTS "Enable tests" ON)
@@ -19,7 +16,9 @@ endif()
 
 # generates Doxygen documentation
 if(KDTREE_ENABLE_DOXYGEN)
-  KDTree_enable_doxygen("awesome-sidebar")
+    include(FetchContent)
+    include(cmake/Doxygen.cmake)
+    KDTree_enable_doxygen("awesome-sidebar")
 endif()
 
 add_executable(target main.cxx)
