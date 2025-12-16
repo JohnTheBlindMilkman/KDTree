@@ -9,7 +9,9 @@
 * [Current Limitations](#current-limitations)
 
 ## General Info
-lorem ipsum
+This is my implementation of an k-dimensional tree data structure. It was designed to be used in my PhD-related repos and analyses, but never really implemented due to the limited amount of resources I could devote to it. Nevertheless, I still plan to update it in the future. If you want to help in that please submit a pull request.
+
+I've made a design decision to make the tree keep all of its data only in the bottom nodes. In its final version the data should be stored in a fixed-size container which would act similarly to a double eneded queue.
 
 ## Technologies
 The project has been build using:
@@ -74,6 +76,6 @@ I wrote *tries* because it may return an empty point / vector of points of no su
 The current implementations of those search algorithms are not perfect. Please see [this section](#current-limitations) to learn what are the current imperfections.
 
 ## Current Limitations
-1. `KDTree::FindNNearest(Point,n)` and `KDTree::FindWithinDistance(Point,d)` currently will only look in a subtree which is only up to N nodes above the leaf node; where N - dimensions of the space proveided as tmplate argument to `KDTree`. If one specifies more points to be found than there are points in this subtree it will not extend the search to higher nodes. It is not what we should expect, but I am still too dumb to implment this in an elegant way. If you are more knowledgeable than me, and would like to solve to this issue, please submit a pull request.
+1. `KDTree::FindNNearest(Point,n)` and `KDTree::FindWithinDistance(Point,d)` currently will only look in a subtree which is only up to N nodes above the leaf node; where N - dimensions of the space proveided as tmplate argument to `KDTree`. If one specifies more points to be found than there are points in this subtree it will not extend the search to higher nodes. It is not what we should expect, I have a solution in mind (and in the "issues" section of the repo). If you are more knowledgeable than me, and would like to solve to this issue, please submit a pull request.
 2. I'm not using concepts, as for now I am keeping this project in C++17. I am also not fluent in elvish (a.k.a. template metaprogramming) so no SFINAE trickery is implemented in here to stop you from breaking the KDTree. Please be cautious.
 3. The current tests ~~cover more cases than half of the repos here~~ are very limited and very much work in progress. They just take a lot of time finish, but I'm updating them consistently. Also the fact that this is a template class does not help me.
