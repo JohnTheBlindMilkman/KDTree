@@ -34,21 +34,22 @@ The KDTree has four template parameters:
 - T (default=double) - data type in which the points will be represented
 - Distance (default=SquaredDistance) - metric that will be used to represent the distance between points; default is squared euclidean distance
 
-Really what's needed is just the type of the stored object and the number of dimensions in our space:
-```
-KDTree<Object,N> tree;
+Really what's needed is just the type of the stored object and the number of dimensions in our space. For example:
+```c++
+KDTree<Object,3> tree;
 ```
 
 The stored type can be arbitrary. With one limitation: it has to have an operator==, required by the point removal functinoality.
 
 ### Adding Points to the Tree
 To add a point first you need to create the point itself. It is done as following:
+```c++
+Object obj; // some initialisation
+Point<Object,T,N> point = {obj,{obj.a,obj.b,obj.c}};
 ```
-Point<Object,T,N> point = {\*Object-class object*\,{\*coordinates as std::array<T,N> or std::initializer_list*\}};
-```
-Then it is as simple as calling `AddPoint` function:
+The first argument is the object we want to store and the second is anything convertible to `std::array`. Then it is as simple as calling `AddPoint` function:
 
-```
+```c++
 tree.AddPoint(point);
 ```
 
@@ -56,7 +57,7 @@ The function will return `true` if the point was successfully added and `false` 
 
 ### Removing Points from the Tree
 To remove a point simply call
-```
+```c++
 tree.RemovePoint(point);
 ```
 
@@ -68,7 +69,7 @@ The points in a KDTree are partitioned for optimal search times. My KDTree offer
 - `KDTree::FindNNearest(Point,n)` - tries to find `n` closest points to `Point`
 - `KDTree::FindWithinDistance(Point,d)` - tries to find all points in a ball centered at `Point` with a radius equal to `d`
 
-I wrote *tries* because it may return an empty point/vector of points of no such point was found.
+I wrote *tries* because it may return an empty point / vector of points of no such point was found.
 
 The current implementations of those search algorithms are not perfect. Please see [this section](#current-limitations) to learn what are the current imperfections.
 
