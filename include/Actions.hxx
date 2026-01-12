@@ -120,7 +120,7 @@
 
                         std::array<T,Dims> coordinates;
                         std::fill_n(coordinates.begin(),Dims,std::numeric_limits<T>::infinity());
-                        Point<Leaf,T,Dims> closestPoint = {.object = Leaf(), .coords = coordinates};
+                        Point<Leaf,T,Dims> closestPoint = {Leaf(), coordinates};
 
                         FindClosestPoint(nodes.at(std::min(nodes.size(),Dims) - 1),point,closestPoint);
 

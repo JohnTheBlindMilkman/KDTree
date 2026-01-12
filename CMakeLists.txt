@@ -4,6 +4,7 @@ project(KDTree)
 # defining options which can be enabled during building
 option(KDTREE_ENABLE_DOXYGEN "Enable doxygen" ON)
 option(KDTREE_ENABLE_TESTS "Enable tests" ON)
+option(KDTREE_ENABLE_ASAN "Enable address sanitiser during testing" ON)
 
 # enables testing
 if(KDTREE_ENABLE_TESTS)
@@ -20,6 +21,9 @@ if(KDTREE_ENABLE_DOXYGEN)
     include(cmake/Doxygen.cmake)
     KDTree_enable_doxygen("awesome-sidebar")
 endif()
+
+# add some extra compile flags
+add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast)
 
 add_executable(target main.cxx)
 target_include_directories(target PUBLIC "${CMAKE_SOURCE_DIR}/include")
