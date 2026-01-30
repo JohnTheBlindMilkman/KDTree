@@ -124,10 +124,10 @@ TEST_CASE("Node class tests","[node][point][distance]")
         
         Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,2);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point3);
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point3);
         CHECK(node.size() == 2);
         CHECK(point1 == point3);
-        REQUIRE(nearestPoint == point1); // nearest point should be the one which has the same value as point we use to search
+        REQUIRE(nearestPoint.value() == point1); // nearest point should be the one which has the same value as point we use to search
     }
 
     SECTION("Nearest point in node which has split")
@@ -138,11 +138,9 @@ TEST_CASE("Node class tests","[node][point][distance]")
         
         Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point3);
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point3);
         CHECK(node.size() == 0);
-
-        Point<Event,double,3> emptyPoint{};
-        REQUIRE(nearestPoint == emptyPoint); // nearest point should be equal a default-construced one
+        REQUIRE_FALSE(nearestPoint.has_value()); // nearest point should be empty
     }
 
     SECTION("Nearest point in empty node")
@@ -151,9 +149,8 @@ TEST_CASE("Node class tests","[node][point][distance]")
         
         Node<Event,double,3,SquaredDist> node({},nullptr,0,1);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point1);
-        Point<Event,double,3> emptyPoint{};
-        REQUIRE(nearestPoint == emptyPoint); // returned point should be equal a default-construced one
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point1);
+        REQUIRE_FALSE(nearestPoint.has_value()); // returned point should be empty
     }
 
     SECTION("N nearest points where N = 1 and N <= size")
@@ -169,10 +166,10 @@ TEST_CASE("Node class tests","[node][point][distance]")
 
         CHECK(node.size() == 5);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point6);
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point6);
         std::vector<Point<Event,double,3> > nearestPointVec = node.FindNNearest(point6,1);
         CHECK(nearestPointVec.size() == 1); // make sure that vector has the same size as number of requested points
-        REQUIRE(nearestPoint == nearestPointVec.front()); // with N=1 both methods should give the same result
+        REQUIRE(nearestPoint.value() == nearestPointVec.front()); // with N=1 both methods should give the same result
     }
 
     SECTION("N nearest points where N > 1 and N <= size")

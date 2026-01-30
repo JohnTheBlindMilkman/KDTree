@@ -150,7 +150,7 @@
                      * @param pt Point to which the distance should be the smallest
                      * @return Point<Leaf,T,Dims> 
                      */
-                    [[nodiscard]] Point<Leaf,T,Dims> FindNearest(const Point<Leaf,T,Dims> &pt)
+                    [[nodiscard]] std::optional<Point<Leaf,T,Dims> > FindNearest(const Point<Leaf,T,Dims> &pt)
                     {
                         if (m_rootNode == nullptr)
                         {

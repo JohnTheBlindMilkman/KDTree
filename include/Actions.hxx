@@ -96,40 +96,46 @@
             class NearestFinder
             {
                 private:
+                    std::size_t m_maxDepth;
                     Visitor<Leaf,T,Dims,Distance> m_visitor;
 
-                    void FindClosestPoint(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, Point<Leaf,T,Dims> &closestPoint)
-                    {
+                    void FindClosestPoint(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, Point<Leaf,T,Dims> &closestPoint, bool &pointWasFound)
+                    {                        
                         if (node->IsSplit())
                         {
-                            FindClosestPoint(node->GetLeftNode(),point,closestPoint);
-                            FindClosestPoint(node->GetRightNode(),point,closestPoint);
+                            FindClosestPoint(node->GetChild(point), point, closestPoint, pointWasFound);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            auto distToClosest = Distance::distance(point,closestPoint); // this is calculated unnecessarily often
+                            
+                            if (distToMedian < distToClosest)
+                                FindClosestPoint(node->GetOtherChild(point), point, closestPoint, pointWasFound);
                         }
-                        else
+                        else if (!node->IsEmpty())
                         {
-                            auto newClosestPoint = node->FindNearest(point);
+                            pointWasFound = true;
+                            auto newClosestPoint = node->FindNearest(point).value(); // I have a guarantee that I will find a point, because I check if this node is not empty
                             if (Distance::distance(newClosestPoint,point) < Distance::distance(closestPoint,point))
                                 closestPoint = newClosestPoint;
                         }
                     }
 
                 public:
-                    Point<Leaf,T,Dims> Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
+                    std::optional<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
                     {
-                        auto nodes = m_visitor.Visit(node,point);
-
                         std::array<T,Dims> coordinates;
                         std::fill_n(coordinates.begin(),Dims,std::numeric_limits<T>::infinity());
                         Point<Leaf,T,Dims> closestPoint = {Leaf(), coordinates};
 
-                        FindClosestPoint(nodes.at(std::min(nodes.size(),Dims) - 1),point,closestPoint);
+                        bool pointWasFound = false;
+                        FindClosestPoint(node,point,closestPoint,pointWasFound);
 
-                        return closestPoint;
+                        // how do I check if I have found any point at all?
+                        return (pointWasFound) ? std::optional<Point<Leaf,T,Dims> >{closestPoint} : std::nullopt;
                     }
             };
 
             /**
-             * @brief Finder object. It tries to find N closest points to the one passed as argument. It will look only within the vicinity of the point and may return less than N points.
+             * @brief Finder object. It tries to find N closest points to the one passed as argument.
              * 
              * @tparam Leaf Object type that will be stored in leafs 
              * @tparam T Arithmetic type of point coordinates
@@ -142,28 +148,31 @@
                 private:
                     Visitor<Leaf,T,Dims,Distance> m_visitor;
 
-                    void FindNClosestPoints(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, std::size_t nPoints)
+                    void FindAtLeastNClosestPoints(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, std::size_t nPoints)
                     {
                         if (node->IsSplit())
                         {
-                            FindNClosestPoints(node->GetLeftNode(),point,closestPoints,nPoints);
-                            FindNClosestPoints(node->GetRightNode(),point,closestPoints,nPoints);
+                            FindAtLeastNClosestPoints(node->GetChild(point), point, closestPoints, nPoints);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            auto distToClosest = Distance::distance(point,closestPoints.front()); // this is calculated unnecessarily often
+                            
+                            if (distToMedian < distToClosest || closestPoints.size() < nPoints)
+                                FindAtLeastNClosestPoints(node->GetOtherChild(point), point, closestPoints, nPoints);
                         }
                         else
                         {
                             auto newClosestPoints = node->FindNNearest(point,nPoints);
                             closestPoints.insert(closestPoints.end(),newClosestPoints.begin(),newClosestPoints.end());
+                            std::sort(closestPoints.begin(),closestPoints.end(),[&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs){return Distance::distance(point,lhs) < Distance::distance(point,rhs);});
                         }
                     }
 
                 public:
                     std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::size_t nPoints)
                     {
-                        auto nodes = m_visitor.Visit(node,point);
-
                         std::vector<Point<Leaf,T,Dims> > closestPoints;
 
-                        FindNClosestPoints(nodes.at(std::min(nodes.size(),Dims) - 1),point,closestPoints,nPoints);
+                        FindAtLeastNClosestPoints(node,point,closestPoints,nPoints);
                         std::sort(closestPoints.begin(),closestPoints.end(),
                                 [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs)
                                 {
@@ -192,8 +201,11 @@
                     {
                         if (node->IsSplit())
                         {
-                            FindWithinDistance(node->GetLeftNode(),point,closestPoints,distance);
-                            FindWithinDistance(node->GetRightNode(),point,closestPoints,distance);
+                            FindWithinDistance(node->GetChild(point), point, closestPoints, distance);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            
+                            if (distToMedian < distance)
+                                FindWithinDistance(node->GetOtherChild(point), point, closestPoints, distance);
                         }
                         else
                         {
@@ -205,11 +217,8 @@
                 public:
                     std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, T distance)
                     {
-                        auto nodes = m_visitor.Visit(node,point);
                         std::vector<Point<Leaf,T,Dims> > closestPoints;
-
-                        FindWithinDistance(nodes.at(std::min(nodes.size(),Dims) - 1),point,closestPoints,distance);
-
+                        FindWithinDistance(node,point,closestPoints,distance);
                         return closestPoints;
                     }
             };
