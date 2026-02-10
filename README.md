@@ -69,13 +69,10 @@ The function will return `true` if the point was successfully removed and `false
 The points in a KDTree are partitioned for optimal search times. My KDTree offers three search functions:
 - `KDTree::FindNearest(Point)` - tries ot find the closest point to `Point`
 - `KDTree::FindNNearest(Point,n)` - tries to find `n` closest points to `Point`
-- `KDTree::FindWithinDistance(Point,d)` - tries to find all points in a ball centered at `Point` with a radius equal to `d`
+- `KDTree::FindWithinDistance(Point,d)` - tries to find all points in a hypsersphere centered at `Point` with a radius equal to `d`
 
 I wrote *tries* because it may return an empty point / vector of points of no such point was found.
 
-The current implementations of those search algorithms are not perfect. Please see [this section](#current-limitations) to learn what are the current imperfections.
-
 ## Current Limitations
-1. `KDTree::FindNNearest(Point,n)` and `KDTree::FindWithinDistance(Point,d)` currently will only look in a subtree which is only up to N nodes above the leaf node; where N - dimensions of the space proveided as tmplate argument to `KDTree`. If one specifies more points to be found than there are points in this subtree it will not extend the search to higher nodes. It is not what we should expect, I have a solution in mind (and in the "issues" section of the repo). If you are more knowledgeable than me, and would like to solve to this issue, please submit a pull request.
-2. I'm not using concepts, as for now I am keeping this project in C++17. I am also not fluent in elvish (a.k.a. template metaprogramming) so no SFINAE trickery is implemented in here to stop you from breaking the KDTree. Please be cautious.
-3. The current tests ~~cover more cases than half of the repos here~~ are very limited and very much work in progress. They just take a lot of time finish, but I'm updating them consistently. Also the fact that this is a template class does not help me.
+1. I'm not using concepts, as for now I am keeping this project in C++17. I am also not fluent in elvish (a.k.a. template metaprogramming) so no SFINAE trickery is implemented in here to stop you from breaking the KDTree. Please be cautious.
+2. The current tests ~~cover more cases than half of the repos here~~ are very limited and very much work in progress. They just take a lot of time finish, but I'm updating them consistently. Also the fact that this is a template class does not help me.

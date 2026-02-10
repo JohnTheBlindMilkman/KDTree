@@ -21,6 +21,14 @@
             class Inserter
             {
                 public:
+                    /**
+                     * @brief Insert point starting from the given node
+                     * 
+                     * @param node starting node (top of the tree)
+                     * @param point point to be inserted
+                     * @return true if successful, flase otherweise
+                     * @throws std::runtime_error if the node is a nullptr an exception is thrown
+                     */
                     bool Insert(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, Point<Leaf,T,Dims> &&point)
                     {
                         if (node != nullptr)
@@ -53,6 +61,14 @@
             class Deleter
             {
                 public:
+                    /**
+                     * @brief Remove point starting from the given node
+                     * 
+                     * @param node starting node (top of the tree)
+                     * @param point point to be removed
+                     * @return true if successful, flase otherweise
+                     * @throws std::runtime_error if the node is a nullptr an exception is thrown
+                     */
                     bool Remove(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
                     {
                         if (node != nullptr)
@@ -113,6 +129,13 @@
                     }
 
                 public:
+                    /**
+                     * @brief Find closest point in the tree
+                     * 
+                     * @param node starting node (top of the tree)
+                     * @param point point to match against
+                     * @return closest point or std::nullopt if no point was found in the tree
+                     */
                     std::optional<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
                     {
                         Point<Leaf,T,Dims> closestPoint = {Leaf(), {}};
@@ -164,6 +187,14 @@
                     }
 
                 public:
+                    /**
+                     * @brief Find N closest points in a tree.
+                     * 
+                     * @param node starting node (top of the tree)
+                     * @param point point to match against
+                     * @param nPoints number of closest points to look for
+                     * @return a vector of N closest points or less (if there were not enough points)
+                     */
                     std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::size_t nPoints)
                     {
                         std::vector<Point<Leaf,T,Dims> > closestPoints;
@@ -216,6 +247,14 @@
                     }
 
                 public:
+                    /**
+                     * @brief Find all points withing given distance.
+                     * 
+                     * @param node starting node (top of the tree)
+                     * @param point point to match agains
+                     * @param distance maximum distance
+                     * @return a vector of all points within given distance 
+                     */
                     std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, T distance)
                     {
                         std::vector<Point<Leaf,T,Dims> > closestPoints;
