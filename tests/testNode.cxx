@@ -113,6 +113,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         CHECK(node.size() == 1);
         REQUIRE(node.RemovePoint(point3) == true); // removing point with same ID should be possible (Leaf class impelmentation dependent)
         CHECK(node.size() == 0);
+        CHECK(node.IsEmpty());
         REQUIRE(node.GetData().size() == 0); //check again if it was removed from data
     }
 

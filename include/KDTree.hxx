@@ -119,7 +119,7 @@
                         }
                         else
                         {
-                            return m_inserter.Insert(m_rootNode,point);
+                            return m_inserter.Insert(m_rootNode,std::move(point));
                         }
                     }
                     /**

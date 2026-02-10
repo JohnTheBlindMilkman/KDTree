@@ -93,7 +93,8 @@
                     [[nodiscard]] T CalculateDistanceToMedian(const Point<Leaf,T,Dims> &point) const noexcept
                     {
                         Point<Leaf,T,Dims> pointOnHyperplane{{},std::array<T,Dims>{}};
-                        pointOnHyperplane.coords.at(m_dimensionIndex);
+                        std::fill_n(pointOnHyperplane.coords.begin(),Dims,T(0));
+                        pointOnHyperplane.coords.at(m_dimensionIndex) = m_median;
                         
                         return Distance::distance(point,pointOnHyperplane);
                     }
