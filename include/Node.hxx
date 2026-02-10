@@ -3,6 +3,7 @@
 
     #include <memory>
     #include <algorithm>
+    #include <optional>
 
     #include "Metrics.hxx"
     #include "JJUtils.hxx"
@@ -12,7 +13,7 @@
         namespace KDTree
         {
             /**
-             * @brief Strucrure repsenting a node of a tree. It holds points (if it is at the bottom og the tree) or points to its two child nodes (if it is not at the bottom of the tree)
+             * @brief Strucrure repsenting a node of a tree. It holds points (if it is at the bottom of the tree) or points to its two child nodes (if it is not at the bottom of the tree)
              * 
              * @tparam Leaf Object type that will be stored in leafs 
              * @tparam T Arithmetic type of point coordinates
@@ -28,23 +29,8 @@
                     std::size_t m_depth, m_dimensionIndex, m_bucketSize;
                     std::vector<Point<Leaf,T,Dims> > m_storedData;
                     std::shared_ptr<Node<Leaf,T,Dims,Distance> > m_leftNode, m_rightNode;
+                    const Node<Leaf,T,Dims,Distance> *m_parentNode; // non-owning pointer
 
-                public:
-                    Node(std::vector<Point<Leaf,T,Dims> > &&data, std::size_t depth ,std::size_t bucketSize)
-                    : m_isSplit(false), 
-                    m_median(T()), 
-                    m_depth(depth),
-                    m_dimensionIndex(depth % Dims), 
-                    m_bucketSize(bucketSize), 
-                    m_storedData(std::move(data)), 
-                    m_leftNode(nullptr), 
-                    m_rightNode(nullptr)
-                    {
-                        if (m_storedData.size() > m_bucketSize)
-                        {
-                            Split();
-                        }
-                    }
                     void Split()
                     {
                         m_isSplit = true;
@@ -69,8 +55,18 @@
                             m_median = dataPair.second.front().coords.at(m_dimensionIndex);
                         }
 
-                        m_leftNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(dataPair.first),m_depth + 1,m_bucketSize);
-                        m_rightNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(dataPair.second),m_depth + 1,m_bucketSize);
+                        m_leftNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(dataPair.first), this, m_depth + 1, m_bucketSize);
+                        m_rightNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(dataPair.second), this, m_depth + 1, m_bucketSize);
+                    }
+
+                public:
+                    Node(std::vector<Point<Leaf,T,Dims> > &&data, const Node<Leaf,T,Dims,Distance> *parentNode, std::size_t depth ,std::size_t bucketSize): m_isSplit(false), m_median(T()), 
+                        m_depth(depth), m_dimensionIndex(depth % Dims), m_bucketSize(bucketSize), m_storedData(std::move(data)),m_leftNode(nullptr), m_rightNode(nullptr), m_parentNode(parentNode)
+                    {
+                        if (m_storedData.size() > m_bucketSize)
+                        {
+                            Split();
+                        }
                     }
                     [[nodiscard]] std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetChild(const Point<Leaf,T,Dims> &point) const noexcept
                     {
@@ -82,6 +78,25 @@
                         {
                             return GetLeftNode();
                         } 
+                    }
+                    [[nodiscard]] std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetOtherChild(const Point<Leaf,T,Dims> &point) const noexcept
+                    {
+                        if (point.coords.at(m_dimensionIndex) <= m_median)
+                        {
+                            return GetRightNode();
+                        }
+                        else
+                        {
+                            return GetLeftNode();
+                        } 
+                    }
+                    [[nodiscard]] T CalculateDistanceToMedian(const Point<Leaf,T,Dims> &point) const noexcept
+                    {
+                        Point<Leaf,T,Dims> pointOnHyperplane{{},std::array<T,Dims>{}};
+                        std::fill_n(pointOnHyperplane.coords.begin(),Dims,T(0));
+                        pointOnHyperplane.coords.at(m_dimensionIndex) = m_median;
+                        
+                        return Distance::distance(point,pointOnHyperplane);
                     }
                     bool AddPoint(Point<Leaf,T,Dims> &&point)
                     {
@@ -100,18 +115,18 @@
                         }
                     }
                     bool RemovePoint(const Point<Leaf,T,Dims> &point)
-                    {   
+                    {
                         const auto last = std::remove(m_storedData.begin(),m_storedData.end(),point);
                         if (last == m_storedData.end())
                             return false;
                         m_storedData.erase(last,m_storedData.end());
                         return true;
                     }
-                    [[nodiscard]] Point<Leaf,T,Dims> FindNearest(const Point<Leaf,T,Dims> &point) noexcept
+                    [[nodiscard]] std::optional<Point<Leaf,T,Dims> > FindNearest(const Point<Leaf,T,Dims> &point) noexcept
                     {
                         if (m_storedData.empty())
                         {
-                            return {};
+                            return std::nullopt;
                         }
                         else
                         {
@@ -119,7 +134,7 @@
                             return m_storedData.front();
                         }
                     }
-                    std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &point, std::size_t nPoints)
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &point, std::size_t nPoints)
                     {
                         if (m_storedData.empty())
                         {
@@ -131,7 +146,7 @@
                             return std::vector<Point<Leaf,T,Dims> >(m_storedData.begin(),(m_storedData.begin() + nPoints > m_storedData.end()) ? m_storedData.end() : m_storedData.begin() + nPoints);
                         }
                     }
-                    std::vector<Point<Leaf,T,Dims> > FindWithinDistance(const Point<Leaf,T,Dims> &point, T dist)
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindWithinDistance(const Point<Leaf,T,Dims> &point, T dist)
                     {
                         if (m_storedData.empty())
                         {
@@ -146,10 +161,12 @@
                     }
                     [[nodiscard]] inline std::vector<Point<Leaf,T,Dims> > GetData() const noexcept {return m_storedData;}
                     [[nodiscard]] inline std::size_t size() const noexcept {return m_storedData.size();}
+                    [[nodiscard]] inline bool IsEmpty() const noexcept {return m_storedData.empty();}
                     [[nodiscard]] inline bool IsSplit() const noexcept {return m_isSplit;}
                     [[nodiscard]] inline T GetMedian() const noexcept {return m_median;}
+                    [[nodiscard]] inline const Node<Leaf,T,Dims,Distance>* GetParentNode() const noexcept {return m_parentNode;}
                     [[nodiscard]] inline std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetLeftNode() const noexcept {return m_leftNode;}
-                    [[nodiscard]] inline std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetRightNode() const noexcept {return m_rightNode;}      
+                    [[nodiscard]] inline std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetRightNode() const noexcept {return m_rightNode;}
             };
 
         } // namespace KDTree

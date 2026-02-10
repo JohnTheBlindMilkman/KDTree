@@ -17,6 +17,19 @@ std::ostream& operator<<(std::ostream &stream,const JJDataStruct::KDTree::Point<
     return stream;
 }
 
+std::ostream& operator<<(std::ostream &stream,const std::optional<JJDataStruct::KDTree::Point<Event,double,3> > &pt)
+{
+    if (pt.has_value())
+    {
+        stream << "ID: " << pt.value().object.id << " [" << pt.value().coords.at(0) << "," << pt.value().coords.at(1) << "," << pt.value().coords.at(2) << "]";
+    }
+    else
+    {
+        stream << "nullopt";
+    }
+    return stream;
+}
+
 std::ostream& operator<<(std::ostream &stream,const std::vector<JJDataStruct::KDTree::Point<Event,double,3> > &pts)
 {
     for (const auto &point : pts)

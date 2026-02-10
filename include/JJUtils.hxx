@@ -49,7 +49,7 @@
                  * 
                  * @param fsd other fixed_size_deque object
                  */
-                fixed_size_deque(fixed_size_deque &&fsd) : m_maxSize(std::move(fsd.m_maxSize)) m_deque(std::move(fsd.m_deque)) {}
+                fixed_size_deque(fixed_size_deque &&fsd) : m_maxSize(std::move(fsd.m_maxSize)), m_deque(std::move(fsd.m_deque)) {}
                 /**
                  * @brief Get the number of elements
                  * 
@@ -61,25 +61,25 @@
                  * 
                  * @return std::deque<T>::iterator 
                  */
-                std::deque<T>::iterator begin() {return m_deque.begin();}
+                typename std::deque<T>::iterator begin() {return m_deque.begin();}
                 /**
                  * @brief Get the iterator pointing at the beginnig of the container
                  * 
                  * @return std::deque<T>::const_iterator 
                  */
-                std::deque<T>::const_iterator begin() const {return m_deque.begin();}
+                typename std::deque<T>::const_iterator begin() const {return m_deque.begin();}
                 /**
                  * @brief Get the iterator pointing at the one-after-last element of the container
                  * 
                  * @return std::deque<T>::iterator 
                  */
-                std::deque<T>::iterator end() {return m_deque.end();}
+                typename std::deque<T>::iterator end() {return m_deque.end();}
                 /**
                  * @brief Get the iterator pointing at the one-after-last element of the container
                  * 
                  * @return std::deque<T>::const_iterator 
                  */
-                std::deque<T>::const_iterator end() const {return m_deque.end();}
+                typename std::deque<T>::const_iterator end() const {return m_deque.end();}
                 /**
                  * @brief Add a new element at the end. This method will also call std::deque::pop_front if the size of the container exceeds the max buffer size
                  * 

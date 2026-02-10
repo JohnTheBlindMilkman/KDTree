@@ -14,7 +14,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
 
     SECTION("Empty node state")
     {
-        Node<Event,double,3,SquaredDist> node({},0,32);
+        Node<Event,double,3,SquaredDist> node({},nullptr,0,32);
 
         REQUIRE_THAT(node.GetMedian(), Catch::Matchers::WithinRel(double())); // GetMedian should be equal to T() [T = double]
         REQUIRE(node.IsSplit() == false); // node is not split
@@ -27,7 +27,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
     {
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({},0,1);
+        Node<Event,double,3,SquaredDist> node({},nullptr,0,1);
 
         REQUIRE(node.AddPoint(std::move(point1)) == true); // point was added successfuly
         REQUIRE(node.IsSplit() == false); // node is not split
@@ -40,7 +40,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
     {
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
 
-        Node<Event,double,3,SquaredDist> node({},0,32);
+        Node<Event,double,3,SquaredDist> node({},nullptr,0,32);
 
         REQUIRE(node.GetData().size() == 0); // passed data was empty
         REQUIRE(node.size() == 0); // node is empty
@@ -54,7 +54,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({},0,1);
+        Node<Event,double,3,SquaredDist> node({},nullptr,0,1);
 
         CHECK(node.AddPoint(std::move(point1)) == true); // point was added successfuly
         REQUIRE(node.IsSplit() == false); // node is not split
@@ -82,7 +82,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         Point<Event,double,3> point4 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,1);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
         REQUIRE(node.IsSplit() == true); // testing again, this time data is passed in ctor
 
         REQUIRE(node.GetChild(point3) == node.GetLeftNode()); // point3 == point1 and point3 < median therefore it will point to left node
@@ -95,7 +95,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,1);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
         REQUIRE(node.AddPoint(std::move(point3)) == false); // node is split, AddPoint should return false
         REQUIRE(node.size() == 0); // data should still be empty
     }
@@ -106,13 +106,14 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1},0,1);
+        Node<Event,double,3,SquaredDist> node({point1},nullptr,0,1);
 
         CHECK(node.size() == 1);
         REQUIRE(node.RemovePoint(point2)== false); // removing point which is not in tree shoudl eval to false
         CHECK(node.size() == 1);
         REQUIRE(node.RemovePoint(point3) == true); // removing point with same ID should be possible (Leaf class impelmentation dependent)
         CHECK(node.size() == 0);
+        CHECK(node.IsEmpty());
         REQUIRE(node.GetData().size() == 0); //check again if it was removed from data
     }
 
@@ -122,12 +123,12 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,2);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,2);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point3);
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point3);
         CHECK(node.size() == 2);
         CHECK(point1 == point3);
-        REQUIRE(nearestPoint == point1); // nearest point should be the one which has the same value as point we use to search
+        REQUIRE(nearestPoint.value() == point1); // nearest point should be the one which has the same value as point we use to search
     }
 
     SECTION("Nearest point in node which has split")
@@ -136,24 +137,21 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,1);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point3);
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point3);
         CHECK(node.size() == 0);
-
-        Point<Event,double,3> emptyPoint{};
-        REQUIRE(nearestPoint == emptyPoint); // nearest point should be equal a default-construced one
+        REQUIRE_FALSE(nearestPoint.has_value()); // nearest point should be empty
     }
 
     SECTION("Nearest point in empty node")
     {
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({},0,1);
+        Node<Event,double,3,SquaredDist> node({},nullptr,0,1);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point1);
-        Point<Event,double,3> emptyPoint{};
-        REQUIRE(nearestPoint == emptyPoint); // returned point should be equal a default-construced one
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point1);
+        REQUIRE_FALSE(nearestPoint.has_value()); // returned point should be empty
     }
 
     SECTION("N nearest points where N = 1 and N <= size")
@@ -165,14 +163,14 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point5 = {event5,{event5.Xvertex,event5.Yvertex,event5.Zvertex}};
         Point<Event,double,3> point6 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4,point5},0,5);
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4,point5},nullptr,0,5);
 
         CHECK(node.size() == 5);
 
-        Point<Event,double,3> nearestPoint = node.FindNearest(point6);
+        std::optional<Point<Event,double,3> > nearestPoint = node.FindNearest(point6);
         std::vector<Point<Event,double,3> > nearestPointVec = node.FindNNearest(point6,1);
         CHECK(nearestPointVec.size() == 1); // make sure that vector has the same size as number of requested points
-        REQUIRE(nearestPoint == nearestPointVec.front()); // with N=1 both methods should give the same result
+        REQUIRE(nearestPoint.value() == nearestPointVec.front()); // with N=1 both methods should give the same result
     }
 
     SECTION("N nearest points where N > 1 and N <= size")
@@ -184,7 +182,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point5 = {event5,{event5.Xvertex,event5.Yvertex,event5.Zvertex}};
         Point<Event,double,3> point6 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4,point5},0,5);
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4,point5},nullptr,0,5);
 
         CHECK(node.size() == 5);
 
@@ -201,7 +199,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,5);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,5);
 
         CHECK(node.size() == 2);
 
@@ -217,7 +215,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,1);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
         CHECK(node.size() == 0);
 
         std::vector<Point<Event,double,3> > nearestPointVec = node.FindNNearest(point3,2);
@@ -229,7 +227,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
     {
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({},0,1);
+        Node<Event,double,3,SquaredDist> node({},nullptr,0,1);
         CHECK(node.size() == 0);
 
         std::vector<Point<Event,double,3> > nearestPointVec = node.FindNNearest(point1,2);
@@ -243,7 +241,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
         Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2},0,5);
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,5);
 
         std::vector<Point<Event,double,3> > nearestPointVec = node.FindWithinDistance(point3,3);
         CHECK(nearestPointVec.size() == 2);
@@ -260,7 +258,7 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Point<Event,double,3> point5 = {event5,{event5.Xvertex,event5.Yvertex,event5.Zvertex}};
         Point<Event,double,3> point6 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         
-        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4,point5},0,5);
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4,point5},nullptr,0,5);
 
         std::vector<Point<Event,double,3> > nearestPointVec = node.FindWithinDistance(point6,3);
         CHECK(nearestPointVec.size() == 3);

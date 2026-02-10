@@ -7,12 +7,9 @@
 // Settign up variables and aliases
 // =====================================================================================================
 
-template <typename Leaf, typename T, std::size_t Dims>
-using Point = JJDataStruct::KDTree::Point<Leaf,T,Dims>;
-template <typename Leaf, typename T, std::size_t Dims, typename Distance>
-using Node = JJDataStruct::KDTree::Node<Leaf,T,Dims,Distance>;
-template <typename Leaf, std::size_t Dims, typename T, typename Distance>
-using KDTree = JJDataStruct::KDTree::KDTree<Leaf,Dims,T,Distance>;
+template <typename Leaf, typename T, std::size_t Dims> using Point = JJDataStruct::KDTree::Point<Leaf,T,Dims>;
+template <typename Leaf, typename T, std::size_t Dims, typename Distance> using Node = JJDataStruct::KDTree::Node<Leaf,T,Dims,Distance>;
+template <typename Leaf, std::size_t Dims, typename T, typename Distance> using KDTree = JJDataStruct::KDTree::KDTree<Leaf,Dims,T,Distance>;
 using SquaredDist = JJDataStruct::KDTree::SquaredDist;
 using RootSquaredDist = JJDataStruct::KDTree::RootSquaredDist;
 
@@ -23,9 +20,48 @@ struct Event
     bool operator==(const Event &other) {return (id == other.id);}
 };
 
+struct OneDim
+{
+    std::size_t id;
+    double x;
+    bool operator==(const OneDim &other) {return (id == other.id);}
+};
+
+struct TwoDim
+{
+    std::size_t id;
+    double x, y;
+    bool operator==(const TwoDim &other) {return (id == other.id);}
+};
+
+struct ThreeDim
+{
+    std::size_t id;
+    double x, y, z;
+    bool operator==(const ThreeDim &other) {return (id == other.id);}
+};
+
 std::ostream& operator<<(std::ostream &stream,const JJDataStruct::KDTree::Point<Event,double,3> &pt)
 {
     stream << "ID: " << pt.object.id << " [" << pt.coords.at(0) << "," << pt.coords.at(1) << "," << pt.coords.at(2) << "]";
     //stream << "ID: " << pt.object.id << " [" << pt.object.Xvertex << "," << pt.object.Yvertex << "," << pt.object.Zvertex << "]";
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream &stream,const JJDataStruct::KDTree::Point<OneDim,double,1> &pt)
+{
+    stream << "(" << pt.object.id << ", [" << pt.coords.at(0) << "])";
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream &stream,const JJDataStruct::KDTree::Point<TwoDim,double,2> &pt)
+{
+    stream << "(" << pt.object.id << ", [" << pt.coords.at(0) << "," << pt.coords.at(1) << "])";
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream &stream,const JJDataStruct::KDTree::Point<ThreeDim,double,3> &pt)
+{
+    stream << "(" << pt.object.id << ", [" << pt.coords.at(0) << "," << pt.coords.at(1) << "," << pt.coords.at(2) << "])";
     return stream;
 }

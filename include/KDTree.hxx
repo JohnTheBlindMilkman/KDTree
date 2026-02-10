@@ -81,17 +81,8 @@
                      * @param maxSize the maximal size of points which will be stored in the KDTree before it splits (it is better to first collect many points and only split the tree after; this will result in a more balanced tree)
                      * @param data data that can be passed into the tree at construction (or use AddPoint method to add them later)
                      */
-                    constexpr KDTree(std::size_t bucketSize, std::size_t maxSize = 10000, std::vector<Point<Leaf,T,Dims> > data = {}) 
-                    : m_isSplit(false),
-                    m_bucketSize(bucketSize), 
-                    m_maxSizeBeforeSplit(maxSize), 
-                    m_storedData(data), 
-                    m_rootNode(nullptr),
-                    m_inserter(),
-                    m_deleter(),
-                    m_nearestFinder(),
-                    m_nNearestFinder(),
-                    m_distanceFinder()
+                    constexpr KDTree(std::size_t bucketSize, std::size_t maxSize = 10000, std::vector<Point<Leaf,T,Dims> > data = {}) : m_isSplit(false), m_bucketSize(bucketSize), m_maxSizeBeforeSplit(maxSize), 
+                        m_storedData(data), m_rootNode(nullptr),m_inserter(),m_deleter(),m_nearestFinder(),m_nNearestFinder(),m_distanceFinder()
                     {
                         if (m_storedData.size() > maxSize)
                             SplitTree();
@@ -106,7 +97,7 @@
                         m_isSplit = true;
                         if (m_rootNode == nullptr)
                         {
-                            m_rootNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(m_storedData),0,m_bucketSize);
+                            m_rootNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(m_storedData), nullptr, 0, m_bucketSize);
                         }
                     }
                     /**
@@ -128,7 +119,7 @@
                         }
                         else
                         {
-                            return m_inserter.Insert(m_rootNode,point);
+                            return m_inserter.Insert(m_rootNode,std::move(point));
                         }
                     }
                     /**
@@ -159,7 +150,7 @@
                      * @param pt Point to which the distance should be the smallest
                      * @return Point<Leaf,T,Dims> 
                      */
-                    [[nodiscard]] Point<Leaf,T,Dims> FindNearest(const Point<Leaf,T,Dims> &pt)
+                    [[nodiscard]] std::optional<Point<Leaf,T,Dims> > FindNearest(const Point<Leaf,T,Dims> &pt)
                     {
                         if (m_rootNode == nullptr)
                         {

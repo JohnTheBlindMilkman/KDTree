@@ -25,4 +25,13 @@ if(KDTREE_ENABLE_TESTS)
     target_include_directories(testTree PRIVATE "${CMAKE_SOURCE_DIR}/include")
     catch_discover_tests(testTree)
 
+    if(CMAKE_BUILD_TYPE MATCHES "Debug" AND KDTREE_ENABLE_ASAN)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -fsanitize=undefined -fsanitize=address")
+        target_link_options(testPoint BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address)
+        target_link_options(testDist BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address)
+        target_link_options(testNode BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address)
+        target_link_options(testActions BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address)
+        target_link_options(testTree BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address)
+    endif()
+
 endif()
