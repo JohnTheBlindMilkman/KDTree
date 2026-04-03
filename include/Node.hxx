@@ -39,24 +39,23 @@
                         std::sort(m_storedData.begin(),m_storedData.end(),
                             [&](const Point<Leaf,T,Dims> &p1, const Point<Leaf,T,Dims> &p2)
                             {
-                                return p1.coords.at(m_dimensionIndex) < p2.coords.at(m_dimensionIndex);
+                                return p1.coords[m_dimensionIndex] < p2.coords[m_dimensionIndex];
                             });
 
                         // calculate median for our data at given Dim
-                        std::pair<std::vector<Point<Leaf,T,Dims> >,std::vector<Point<Leaf,T,Dims> > > dataPair = JJUtils::split<Point<Leaf,T,Dims> >(std::move(m_storedData));
-                        // if the median is between the points
-                        if (dataPair.first.size() == dataPair.second.size())
+                        auto [leftData,rightData] = JJUtils::split<Point<Leaf,T,Dims> >(std::move(m_storedData));
+
+                        if (leftData.size() == rightData.size()) // if the median is between the points
                         {
-                            m_median = (dataPair.first.back().coords.at(m_dimensionIndex) + dataPair.second.front().coords.at(m_dimensionIndex)) / 2;
+                            m_median = (leftData.back().coords.at(m_dimensionIndex) + rightData.front().coords.at(m_dimensionIndex)) / 2;
                         }
-                        // if the median is at point
-                        else
+                        else // if the median is at point
                         {
-                            m_median = dataPair.second.front().coords.at(m_dimensionIndex);
+                            m_median = rightData.front().coords.at(m_dimensionIndex);
                         }
 
-                        m_leftNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(dataPair.first), this, m_depth + 1, m_bucketSize);
-                        m_rightNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(dataPair.second), this, m_depth + 1, m_bucketSize);
+                        m_leftNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(leftData), this, m_depth + 1, m_bucketSize);
+                        m_rightNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(rightData), this, m_depth + 1, m_bucketSize);
                     }
 
                 public:
@@ -114,6 +113,22 @@
                             return true;
                         }
                     }
+                    bool AddPoint(const Point<Leaf,T,Dims> &point)
+                    {
+                        if (m_isSplit)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            m_storedData.push_back(point);
+                            if (m_storedData.size() > m_bucketSize)
+                            {
+                                Split();
+                            }
+                            return true;
+                        }
+                    }
                     bool RemovePoint(const Point<Leaf,T,Dims> &point)
                     {
                         const auto last = std::remove(m_storedData.begin(),m_storedData.end(),point);
@@ -134,7 +149,7 @@
                             return m_storedData.front();
                         }
                     }
-                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &point, std::size_t nPoints)
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &point, unsigned nPoints)
                     {
                         if (m_storedData.empty())
                         {

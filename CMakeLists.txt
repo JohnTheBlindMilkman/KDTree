@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(KDTree)
 
 # defining options which can be enabled during building
-option(KDTREE_ENABLE_DOXYGEN "Enable doxygen" ON)
+option(KDTREE_ENABLE_DOXYGEN "Enable doxygen" OFF)
 option(KDTREE_ENABLE_TESTS "Enable tests" ON)
 option(KDTREE_ENABLE_ASAN "Enable address sanitiser during testing" OFF)
 
@@ -23,7 +23,7 @@ if(KDTREE_ENABLE_DOXYGEN)
 endif()
 
 # add some extra compile flags
-add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast)
+add_compile_options(-Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wsign-conversion -Wtrampolines -Wimplicit-fallthrough -Wbidi-chars=any -Werror -Werror=format-security)
 
 add_executable(target main.cxx)
 target_include_directories(target PUBLIC "${CMAKE_SOURCE_DIR}/include")

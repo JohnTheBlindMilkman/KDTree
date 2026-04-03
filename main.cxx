@@ -55,7 +55,7 @@ int main()
 
     for (std::size_t i = 0; i < nPoints; ++i)
     {
-        evt = {i,min+(i*step),max-(i*step),2*min+(2*i*step)};
+        evt = {i,min+(static_cast<double>(i)*step),max-(static_cast<double>(i)*step),2*min+(2*static_cast<double>(i)*step)};
         tree.AddPoint({evt,{evt.Xvertex,evt.Yvertex,evt.Zvertex}});
     }
     tree.SplitTree();

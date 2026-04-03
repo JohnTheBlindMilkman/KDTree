@@ -11,7 +11,9 @@
         std::pair<std::vector<T>,std::vector<T> > split(std::vector<T> &&vec)
         {
             std::vector<T> left, right;
-            std::move(vec.begin()+vec.size()/2,vec.end(),std::back_inserter(right));
+            auto middleIter = vec.begin();
+            std::advance(middleIter, vec.size() / 2);
+            std::move(middleIter,vec.end(),std::back_inserter(right));
             left = std::move(vec);
             left.resize(left.size()-right.size());
 

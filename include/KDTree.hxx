@@ -123,6 +123,28 @@
                         }
                     }
                     /**
+                     * @brief Add point to the tree
+                     * 
+                     * @param point 
+                     * @return true if point could be added or
+                     * @return false otherwise
+                     */
+                    bool AddPoint(const Point<Leaf,T,Dims> &point)
+                    {
+                        if (m_rootNode == nullptr)
+                        {
+                            m_storedData.push_back(point);
+                            if (m_storedData.size() > m_maxSizeBeforeSplit)
+                                SplitTree();
+
+                            return true;
+                        }
+                        else
+                        {
+                            return m_inserter.Insert(m_rootNode,point);
+                        }
+                    }
+                    /**
                      * @brief Remove point from the tree. Uses operator== of the stored Leaf-type object (so if you use your own class/struct, you have to implement it yourself)
                      * 
                      * @param point 
@@ -169,7 +191,7 @@
                      * @param nPoints Number of closest points
                      * @return std::vector<Point<Leaf,T,Dims> > 
                      */
-                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &pt, std::size_t nPoints)
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &pt, unsigned nPoints)
                     {
                         if (m_rootNode == nullptr)
                         {
