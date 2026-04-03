@@ -123,6 +123,28 @@
                         }
                     }
                     /**
+                     * @brief Add point to the tree
+                     * 
+                     * @param point 
+                     * @return true if point could be added or
+                     * @return false otherwise
+                     */
+                    bool AddPoint(const Point<Leaf,T,Dims> &point)
+                    {
+                        if (m_rootNode == nullptr)
+                        {
+                            m_storedData.push_back(point);
+                            if (m_storedData.size() > m_maxSizeBeforeSplit)
+                                SplitTree();
+
+                            return true;
+                        }
+                        else
+                        {
+                            return m_inserter.Insert(m_rootNode,point);
+                        }
+                    }
+                    /**
                      * @brief Remove point from the tree. Uses operator== of the stored Leaf-type object (so if you use your own class/struct, you have to implement it yourself)
                      * 
                      * @param point 
