@@ -134,7 +134,7 @@
                             return m_storedData.front();
                         }
                     }
-                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &point, std::size_t nPoints)
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &point, unsigned nPoints)
                     {
                         if (m_storedData.empty())
                         {

@@ -159,7 +159,7 @@
             class NNearestFinder
             {
                 private:
-                    void FindAtLeastNClosestPoints(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, std::size_t nPoints)
+                    void FindAtLeastNClosestPoints(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, unsigned nPoints)
                     {
                         if (node != nullptr)
                         {
@@ -195,7 +195,7 @@
                      * @param nPoints number of closest points to look for
                      * @return a vector of N closest points or less (if there were not enough points)
                      */
-                    std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::size_t nPoints)
+                    std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, unsigned nPoints)
                     {
                         std::vector<Point<Leaf,T,Dims> > closestPoints;
 

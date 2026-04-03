@@ -169,7 +169,7 @@
                      * @param nPoints Number of closest points
                      * @return std::vector<Point<Leaf,T,Dims> > 
                      */
-                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &pt, std::size_t nPoints)
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &pt, unsigned nPoints)
                     {
                         if (m_rootNode == nullptr)
                         {
