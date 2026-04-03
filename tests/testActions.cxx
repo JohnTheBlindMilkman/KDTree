@@ -90,10 +90,10 @@ TEST_CASE("Deleter class tests","[node][point][distance][action]")
 {
     JJDataStruct::KDTree::Deleter<OneDim,double,1,SquaredDist> deleter;
 
-    SECTION("Deleter throws an exception if the node is a null pointer")
+    SECTION("Deleter returns std::nullopt if the node is a null pointer")
     {
         Point<OneDim,double,1> newPointOneDim = {objOneDim1,objOneDim1.x};
-        REQUIRE_THROWS(deleter.Remove(nullptr,newPointOneDim));
+        REQUIRE(deleter.Remove(nullptr,newPointOneDim) == std::nullopt);
     }
 
     SECTION("Deleter tries to delete an element in an empty node")

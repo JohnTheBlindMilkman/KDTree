@@ -44,6 +44,7 @@
 
                         // calculate median for our data at given Dim
                         auto [leftData,rightData] = JJUtils::split<Point<Leaf,T,Dims> >(std::move(m_storedData));
+                        m_storedData.resize(0);
 
                         if (leftData.size() == rightData.size()) // if the median is between the points
                         {
@@ -56,6 +57,24 @@
 
                         m_leftNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(leftData), this, m_depth + 1, m_bucketSize);
                         m_rightNode = std::make_shared<Node<Leaf,T,Dims,Distance> >(std::move(rightData), this, m_depth + 1, m_bucketSize);
+                    }
+                    void Join()
+                    {
+                        if (!m_leftNode->IsEmpty())
+                        {
+                            auto data = m_leftNode->GetData();
+                            std::move(data.begin(),data.end(),std::back_inserter(m_storedData));
+                        }
+                        if (!m_rightNode->IsEmpty())
+                        {
+                            auto data = m_rightNode->GetData();
+                            std::move(data.begin(),data.end(),std::back_inserter(m_storedData));
+                        }
+
+                        m_leftNode = nullptr;
+                        m_rightNode = nullptr;
+                        m_isSplit = false;
+                        m_median = T();
                     }
 
                 public:
@@ -129,13 +148,19 @@
                             return true;
                         }
                     }
-                    bool RemovePoint(const Point<Leaf,T,Dims> &point)
+                    std::optional<Point<Leaf,T,Dims>> RemovePoint(const Point<Leaf,T,Dims> &point)
                     {
-                        const auto last = std::remove(m_storedData.begin(),m_storedData.end(),point);
-                        if (last == m_storedData.end())
-                            return false;
-                        m_storedData.erase(last,m_storedData.end());
-                        return true;
+                        auto location = std::find(m_storedData.begin(),m_storedData.end(),point);
+
+                        if (location != m_storedData.end())
+                        {
+                            m_storedData.erase(std::remove(m_storedData.begin(),m_storedData.end(),point),m_storedData.end());
+                            return *location;
+                        }
+                        else
+                        {
+                            return std::nullopt;
+                        }
                     }
                     [[nodiscard]] std::optional<Point<Leaf,T,Dims> > FindNearest(const Point<Leaf,T,Dims> &point) noexcept
                     {

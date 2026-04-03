@@ -108,7 +108,9 @@ TEST_CASE("KDTree class test","[kdtree][node][point][distance]")
         CHECK(tree.IsSplit() == false);
         CHECK(tree.size() == 3);
 
-        REQUIRE(tree.RemovePoint(point3) == true);
+        auto point = tree.RemovePoint(point3);
+        REQUIRE(point.has_value());
+        REQUIRE(point.value() == point3);
 
         CHECK(tree.IsSplit() == false);
         REQUIRE(tree.size() == 2);
@@ -123,7 +125,7 @@ TEST_CASE("KDTree class test","[kdtree][node][point][distance]")
         CHECK(tree.IsSplit() == false);
         CHECK(tree.size() == 0);
 
-        REQUIRE(tree.RemovePoint(point1) == false);
+        REQUIRE_FALSE(tree.RemovePoint(point1).has_value());
 
         CHECK(tree.IsSplit() == false);
         CHECK(tree.size() == 0);

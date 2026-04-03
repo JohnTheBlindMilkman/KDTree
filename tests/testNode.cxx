@@ -109,9 +109,11 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Node<Event,double,3,SquaredDist> node({point1},nullptr,0,1);
 
         CHECK(node.size() == 1);
-        REQUIRE(node.RemovePoint(point2)== false); // removing point which is not in tree shoudl eval to false
+        REQUIRE_FALSE(node.RemovePoint(point2).has_value()); // removing point which is not in tree shoudl eval to false
         CHECK(node.size() == 1);
-        REQUIRE(node.RemovePoint(point3) == true); // removing point with same ID should be possible (Leaf class impelmentation dependent)
+        auto point = node.RemovePoint(point3);
+        REQUIRE(point.has_value()); // removing point with same ID should be possible (Leaf class impelmentation dependent)
+        REQUIRE(point.value() == point3);
         CHECK(node.size() == 0);
         CHECK(node.IsEmpty());
         REQUIRE(node.GetData().size() == 0); //check again if it was removed from data

@@ -69,7 +69,7 @@ int main()
     std::cout << "Closest points: " << tree.FindNNearest(point,5) << "\n";
     std::cout << "Closest points: " << tree.FindWithinDistance(point,0.0001) << "\n";
     std::cout << std::boolalpha << tree.AddPoint(std::move(point)) <<"\n";
-    std::cout << std::boolalpha << tree.RemovePoint(point) <<"\n"; 
+    std::cout << std::boolalpha << tree.RemovePoint(point).has_value() <<"\n"; 
     //tree.Print();
 
     /* std::cout << "=============================================================\n";
