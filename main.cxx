@@ -41,7 +41,7 @@ std::ostream& operator<<(std::ostream &stream,const std::vector<JJDataStruct::KD
 
 int main()
 {
-    constexpr std::size_t nPoints{10000};
+    constexpr std::size_t nPoints{100};
     constexpr float min{-5};
     constexpr float max{5};
     constexpr float step = (std::abs(min) + std::abs(max)) / nPoints;
@@ -51,7 +51,7 @@ int main()
     std::mt19937 gen(rd());
     std::normal_distribution<double> norm(0,5); */
 
-    JJDataStruct::KDTree::KDTree<Event,3> tree(32);
+    JJDataStruct::KDTree::KDTree<Event,3> tree(4);
 
     for (std::size_t i = 0; i < nPoints; ++i)
     {
@@ -59,18 +59,23 @@ int main()
         tree.AddPoint({evt,{evt.Xvertex,evt.Yvertex,evt.Zvertex}});
     }
     tree.SplitTree();
-    //tree.Print();
+    tree.Print();
 
-    Event evt2{nPoints+1,1,-1,2};
-    JJDataStruct::KDTree::Point<Event,double,3> point = {evt2,{evt2.Xvertex,evt2.Yvertex,evt2.Zvertex}};
-    std::cout << tree.size() << "\n";
-    std::cout << "Our point: " << point << "\n";
-    std::cout << "Closest point: " << tree.FindNearest(point) << "\n";
-    std::cout << "Closest points: " << tree.FindNNearest(point,5) << "\n";
-    std::cout << "Closest points: " << tree.FindWithinDistance(point,0.0001) << "\n";
-    std::cout << std::boolalpha << tree.AddPoint(std::move(point)) <<"\n";
-    std::cout << std::boolalpha << tree.RemovePoint(point).has_value() <<"\n"; 
-    //tree.Print();
+    // Event evt2{nPoints+1,1,-1,2};
+    // JJDataStruct::KDTree::Point<Event,double,3> point = {evt2,{evt2.Xvertex,evt2.Yvertex,evt2.Zvertex}};
+    // std::cout << tree.size() << "\n";
+    // std::cout << "Our point: " << point << "\n";
+    // std::cout << "Closest point: " << tree.FindNearest(point) << "\n";
+    // std::cout << "Closest points: " << tree.FindNNearest(point,5) << "\n";
+    // std::cout << "Closest points: " << tree.FindWithinDistance(point,0.0001) << "\n";
+    // std::cout << std::boolalpha << tree.AddPoint(std::move(point)) <<"\n";
+    // std::cout << std::boolalpha << tree.RemovePoint(point).has_value() <<"\n"; 
+    for (std::size_t i = 0; i < 9; ++i)
+    {
+        evt = {i,min+(static_cast<double>(i)*step),max-(static_cast<double>(i)*step),2*min+(2*static_cast<double>(i)*step)};
+        tree.RemovePoint({evt,{evt.Xvertex,evt.Yvertex,evt.Zvertex}});
+    }
+    tree.Print();
 
     /* std::cout << "=============================================================\n";
     for (std::size_t i = 0; i < nPoints; ++i)

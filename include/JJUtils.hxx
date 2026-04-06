@@ -7,6 +7,13 @@
 
     namespace JJUtils
     {
+        /**
+         * @brief Split vector into two halves
+         * 
+         * @tparam T stored data type
+         * @param vec container to split
+         * @return pair of vectors (if vec.size() was odd, the second of the returned vectors will be bigger than the first)
+         */
         template<typename T>
         std::pair<std::vector<T>,std::vector<T> > split(std::vector<T> &&vec)
         {

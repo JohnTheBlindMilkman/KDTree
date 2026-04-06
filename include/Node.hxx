@@ -29,7 +29,7 @@
                     std::size_t m_depth, m_dimensionIndex, m_bucketSize;
                     std::vector<Point<Leaf,T,Dims> > m_storedData;
                     std::shared_ptr<Node<Leaf,T,Dims,Distance> > m_leftNode, m_rightNode;
-                    const Node<Leaf,T,Dims,Distance> *m_parentNode; // non-owning pointer
+                    Node<Leaf,T,Dims,Distance> *m_parentNode; // non-owning pointer
 
                     void Split()
                     {
@@ -78,7 +78,7 @@
                     }
 
                 public:
-                    Node(std::vector<Point<Leaf,T,Dims> > &&data, const Node<Leaf,T,Dims,Distance> *parentNode, std::size_t depth ,std::size_t bucketSize): m_isSplit(false), m_median(T()), 
+                    Node(std::vector<Point<Leaf,T,Dims> > &&data, Node<Leaf,T,Dims,Distance> *parentNode, std::size_t depth ,std::size_t bucketSize): m_isSplit(false), m_median(T()), 
                         m_depth(depth), m_dimensionIndex(depth % Dims), m_bucketSize(bucketSize), m_storedData(std::move(data)),m_leftNode(nullptr), m_rightNode(nullptr), m_parentNode(parentNode)
                     {
                         if (m_storedData.size() > m_bucketSize)
@@ -86,6 +86,11 @@
                             Split();
                         }
                     }
+                    // ~Node()
+                    // {
+                    //     delete m_parentNode;
+                    // }
+                    // Node(const Node<Leaf,T,Dims,Distance> &) = default;
                     [[nodiscard]] std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetChild(const Point<Leaf,T,Dims> &point) const noexcept
                     {
                         if (point.coords.at(m_dimensionIndex) > m_median)
@@ -115,6 +120,18 @@
                         pointOnHyperplane.coords.at(m_dimensionIndex) = m_median;
                         
                         return Distance::distance(point,pointOnHyperplane);
+                    }
+                    bool TryJoin()
+                    {
+                        if (!m_leftNode->IsSplit() && !m_rightNode->IsSplit() && m_leftNode->size() + m_rightNode->size() <= m_bucketSize)
+                        {
+                            Join();
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                     bool AddPoint(Point<Leaf,T,Dims> &&point)
                     {
@@ -154,8 +171,9 @@
 
                         if (location != m_storedData.end())
                         {
+                            Point<Leaf,T,Dims> removed_point = *location;
                             m_storedData.erase(std::remove(m_storedData.begin(),m_storedData.end(),point),m_storedData.end());
-                            return *location;
+                            return removed_point;
                         }
                         else
                         {
@@ -204,7 +222,7 @@
                     [[nodiscard]] inline bool IsEmpty() const noexcept {return m_storedData.empty();}
                     [[nodiscard]] inline bool IsSplit() const noexcept {return m_isSplit;}
                     [[nodiscard]] inline T GetMedian() const noexcept {return m_median;}
-                    [[nodiscard]] inline const Node<Leaf,T,Dims,Distance>* GetParentNode() const noexcept {return m_parentNode;}
+                    [[nodiscard]] inline Node<Leaf,T,Dims,Distance>* GetParentNode() const noexcept {return m_parentNode;}
                     [[nodiscard]] inline std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetLeftNode() const noexcept {return m_leftNode;}
                     [[nodiscard]] inline std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetRightNode() const noexcept {return m_rightNode;}
             };

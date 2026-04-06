@@ -78,7 +78,11 @@
                             }
                             else
                             {
-                                return node->RemovePoint(point);
+                                auto tmp_point = node->RemovePoint(point); 
+                                if (node->GetParentNode() != nullptr)
+                                    node->GetParentNode()->TryJoin();
+                                    
+                                return tmp_point;
                             }
                         }
                         else

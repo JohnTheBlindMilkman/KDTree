@@ -133,6 +133,8 @@ TEST_CASE("KDTree class test","[kdtree][node][point][distance]")
 
     // remove from split tree
 
+    // pruning
+
     // find nearest
 
     // find n nearest

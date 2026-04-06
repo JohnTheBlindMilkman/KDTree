@@ -49,6 +49,65 @@ TEST_CASE("Node class tests","[node][point][distance]")
         REQUIRE(node.size() == 1); // node has 1 elem
     }
 
+    SECTION("Creating node with data.size() > bucket size")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
+
+        REQUIRE(node.IsSplit()); // node should be split
+        REQUIRE(node.GetLeftNode()->size() == 1); // children should have one point each
+        REQUIRE(node.GetRightNode()->size() == 1); // idib.
+    }
+
+    SECTION("Node correctly calculates the median value")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
+
+        REQUIRE_THAT(node.GetMedian(),Catch::Matchers::WithinRel(0.5)); // median of x_1 = 0 and x_2 = 1 is 0.5
+    }
+
+    SECTION("Node should join if sum of points in its children is less than bucket size")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
+
+        CHECK(node.IsSplit());
+        CHECK(node.IsEmpty());
+
+        auto removed_point = node.GetLeftNode()->RemovePoint(point1);
+        REQUIRE(removed_point.has_value()); // point removal was successful
+
+        REQUIRE(node.TryJoin()); // node has joined
+        REQUIRE_FALSE(node.IsEmpty()); // note is not empty anymore
+    }
+
+    SECTION("Node should not join if sum of points in its children is more than bucket size")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        Point<Event,double,3> point3 = {event3,{event3.Xvertex,event3.Yvertex,event3.Zvertex}};
+        Point<Event,double,3> point4 = {event4,{event4.Xvertex,event4.Yvertex,event4.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4},nullptr,0,2);
+
+        CHECK(node.IsSplit());
+        CHECK(node.IsEmpty());
+
+        auto removed_point = node.GetRightNode()->RemovePoint(point1);
+        REQUIRE(removed_point.has_value()); // point removal was successful
+        REQUIRE(removed_point.value() == point1);
+
+        REQUIRE_FALSE(node.TryJoin()); // node hasn't joined
+        REQUIRE(node.IsEmpty()); // note is still empty
+    }
+
     SECTION("Adding point ot the node where stored data > bucket size")
     {
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
