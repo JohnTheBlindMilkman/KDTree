@@ -90,10 +90,10 @@ TEST_CASE("Deleter class tests","[node][point][distance][action]")
 {
     JJDataStruct::KDTree::Deleter<OneDim,double,1,SquaredDist> deleter;
 
-    SECTION("Deleter throws an exception if the node is a null pointer")
+    SECTION("Deleter returns std::nullopt if the node is a null pointer")
     {
         Point<OneDim,double,1> newPointOneDim = {objOneDim1,objOneDim1.x};
-        REQUIRE_THROWS(deleter.Remove(nullptr,newPointOneDim));
+        REQUIRE(deleter.Remove(nullptr,newPointOneDim) == std::nullopt);
     }
 
     SECTION("Deleter tries to delete an element in an empty node")
@@ -103,7 +103,7 @@ TEST_CASE("Deleter class tests","[node][point][distance][action]")
         CHECK(node->size() == 0); // making sure the node is empty
 
         Point<OneDim,double,1> point1 = {objOneDim1,objOneDim1.x};
-        REQUIRE_FALSE(deleter.Remove(node,point1)); // try to remove x = 1
+        REQUIRE_FALSE(deleter.Remove(node,point1).has_value()); // try to remove x = 1
     }
 
     SECTION("Deleter tries to delete an element which doesn't exist in the tree")
@@ -123,7 +123,7 @@ TEST_CASE("Deleter class tests","[node][point][distance][action]")
         CHECK(node->GetRightNode()->GetData().at(0) == point2); // right node has x = 4
 
         Point<OneDim,double,1> point3 = {objOneDim3,objOneDim3.x};
-        REQUIRE_FALSE(deleter.Remove(node,point3)); // try remove x = 5
+        REQUIRE_FALSE(deleter.Remove(node,point3).has_value()); // try remove x = 5
         
         CHECK_FALSE(node->GetLeftNode()->IsEmpty());
         CHECK(node->GetLeftNode()->size() == 1);
@@ -133,31 +133,49 @@ TEST_CASE("Deleter class tests","[node][point][distance][action]")
         CHECK(node->GetRightNode()->GetData().at(0) == point2); // right node still has x = 4
     }
 
-    SECTION("Deleter deletes an element which exists in the tree")
+    SECTION("Deleter deletes an element which exists in the left sub-tree")
+    {
+        Point<OneDim,double,1> point1 = {objOneDim1,objOneDim1.x};
+        Point<OneDim,double,1> point2 = {objOneDim2,objOneDim2.x};
+        Point<OneDim,double,1> point3 = {objOneDim3,objOneDim3.x};
+        Point<OneDim,double,1> point4 = {objOneDim4,objOneDim4.x};
+        std::shared_ptr<Node<OneDim,double,1,SquaredDist> > node = std::make_shared<Node<OneDim,double,1,SquaredDist> >(std::vector<Point<OneDim,double,1> >{point1,point2,point3,point4},nullptr,0,2);
+        
+        CHECK(node->GetLeftNode()->size() == 2); // node has two points
+        auto removed_point1 = deleter.Remove(node,point1);
+        REQUIRE(removed_point1.has_value()); // remove x = 1
+        REQUIRE(removed_point1.value() == point1);
+        REQUIRE(node->GetLeftNode()->size() == 1); // node has one point left
+    }
+
+    SECTION("Deleter deletes an element which exists in the right sub-tree")
+    {
+        Point<OneDim,double,1> point1 = {objOneDim1,objOneDim1.x};
+        Point<OneDim,double,1> point2 = {objOneDim2,objOneDim2.x};
+        Point<OneDim,double,1> point3 = {objOneDim3,objOneDim3.x};
+        Point<OneDim,double,1> point4 = {objOneDim4,objOneDim4.x};
+        std::shared_ptr<Node<OneDim,double,1,SquaredDist> > node = std::make_shared<Node<OneDim,double,1,SquaredDist> >(std::vector<Point<OneDim,double,1> >{point1,point2,point3,point4},nullptr,0,2);
+        
+        CHECK(node->GetRightNode()->size() == 2); // node has two points
+        auto remove_point2 = deleter.Remove(node,point3);
+        REQUIRE(remove_point2.has_value()); // remove x = 7
+        REQUIRE(remove_point2.value() == point3);
+        REQUIRE(node->GetRightNode()->size() == 1); // node has one point left
+    }
+
+    SECTION("Deleter deletes an element and causes the parent node to join")
     {
         Point<OneDim,double,1> point1 = {objOneDim1,objOneDim1.x};
         Point<OneDim,double,1> point2 = {objOneDim2,objOneDim2.x};
         std::shared_ptr<Node<OneDim,double,1,SquaredDist> > node = std::make_shared<Node<OneDim,double,1,SquaredDist> >(std::vector<Point<OneDim,double,1> >{point1,point2},nullptr,0,1);
-        CHECK(node->IsEmpty());
-        CHECK(node->size() == 0); // making sure the node is empty
-        CHECK(node->IsSplit()); // making sure it is split
-        CHECK_THAT(node->GetMedian(),Catch::Matchers::WithinRel(2.5)); // median is 2.5
-        CHECK_FALSE(node->GetLeftNode()->IsEmpty());
-        CHECK(node->GetLeftNode()->size() == 1);
-        CHECK(node->GetLeftNode()->GetData().at(0) == point1); // left node has x = 1
-        CHECK_FALSE(node->GetRightNode()->IsEmpty());
-        CHECK(node->GetRightNode()->size() == 1);
-        CHECK(node->GetRightNode()->GetData().at(0) == point2); // right node has x = 4
+        
+        CHECK(node->IsSplit());
 
-        REQUIRE(deleter.Remove(node,point1)); // remove x = 1
-        REQUIRE(node->GetLeftNode()->IsEmpty());
-        REQUIRE(node->GetLeftNode()->size() == 0); // node is empty
-        REQUIRE_THROWS(node->GetLeftNode()->GetData().at(0) == point1); // we don't have x = 1
+        auto removed_point1 = deleter.Remove(node,point1);
+        CHECK(removed_point1.has_value()); // remove x = 1
+        CHECK(removed_point1.value() == point1);
 
-        REQUIRE(deleter.Remove(node,point2)); // remove x = 4
-        REQUIRE(node->GetRightNode()->IsEmpty());
-        REQUIRE(node->GetRightNode()->size() == 0); // node is empty
-        REQUIRE_THROWS(node->GetRightNode()->GetData().at(0) == point2); // we don't have x = 4
+        REQUIRE_FALSE(node->IsSplit());
     }
 }
 
@@ -210,7 +228,7 @@ TEST_CASE("NearestFinder class tests","[node][point][distance][action]")
 
     SECTION("Finder goes to a node where the closest point should be, but it has been removed")
     {
-        CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->RemovePoint(point2)); // we remove the closest point
+        CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->RemovePoint(point2).has_value()); // we remove the closest point
         CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->IsEmpty());
 
         OneDim newObjOneDim{9,5};
@@ -290,7 +308,7 @@ TEST_CASE("NNearestFinder class tests","[node][point][distance][action]")
 
     SECTION("Finder goes to a node where the closest point should be, but it has been removed")
     {
-        CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->RemovePoint(point2)); // we remove the closest point
+        CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->RemovePoint(point2).has_value()); // we remove the closest point
         CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->IsEmpty());
 
         OneDim newObjOneDim{9,5};
@@ -413,7 +431,7 @@ TEST_CASE("DistanceFinder class tests","[node][point][distance][action]")
 
     SECTION("Finder returns empty vector if no point was within distance (point within distance was removed)")
     {
-        CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->RemovePoint(point2)); // we remove the closest point
+        CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->RemovePoint(point2).has_value()); // we remove the closest point
         CHECK(node->GetLeftNode()->GetLeftNode()->GetRightNode()->IsEmpty());
 
         OneDim newObjOneDim{9,5};

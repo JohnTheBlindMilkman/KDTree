@@ -151,15 +151,21 @@
                      * @return true if point was removed or
                      * @return false otherwise
                      */
-                    bool RemovePoint(const Point<Leaf,T,Dims> &point)
+                    std::optional<Point<Leaf,T,Dims>> RemovePoint(const Point<Leaf,T,Dims> &point)
                     {
                         if (m_rootNode == nullptr)
                         {
-                            const auto last = std::remove(m_storedData.begin(),m_storedData.end(),point);
-                            if (last == m_storedData.end())
-                                return false;
-                            m_storedData.erase(last,m_storedData.end());
-                            return true;
+                            auto location = std::find(m_storedData.begin(),m_storedData.end(),point);
+
+                            if (location != m_storedData.end())
+                            {
+                                m_storedData.erase(std::remove(m_storedData.begin(),m_storedData.end(),point),m_storedData.end());
+                                return *location;
+                            }
+                            else
+                            {
+                                return std::nullopt;
+                            }
                         }
                         else
                         {

@@ -50,7 +50,7 @@
             };
 
             /**
-             * @brief Deleter object. It tries to delete passed object at a correct node
+             * @brief Deleter object. It tries to remove object equal to provided object at a correct node
              * 
              * @tparam Leaf Object type that will be stored in leafs 
              * @tparam T Arithmetic type of point coordinates
@@ -66,10 +66,9 @@
                      * 
                      * @param node starting node (top of the tree)
                      * @param point point to be removed
-                     * @return true if successful, flase otherweise
-                     * @throws std::runtime_error if the node is a nullptr an exception is thrown
+                     * @return point wchich is equal to requested one (of exists)
                      */
-                    bool Remove(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
+                    std::optional<Point<Leaf,T,Dims>> Remove(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
                     {
                         if (node != nullptr)
                         {
@@ -79,12 +78,16 @@
                             }
                             else
                             {
-                                return node->RemovePoint(point);
+                                auto tmp_point = node->RemovePoint(point); 
+                                if (node->GetParentNode() != nullptr)
+                                    node->GetParentNode()->TryJoin();
+                                    
+                                return tmp_point;
                             }
                         }
                         else
                         {
-                            throw std::runtime_error("Deleter::Remove - Node is nullptr");
+                            return std::nullopt;
                         }
                     }
             };
