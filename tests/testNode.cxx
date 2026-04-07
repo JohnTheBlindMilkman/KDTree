@@ -145,14 +145,14 @@ TEST_CASE("Node class tests","[node][point][distance]")
         REQUIRE(node.IsSplit() == true); // testing again, this time data is passed in ctor
 
         REQUIRE(node.GetChild(point3) == node.GetLeftNode()); // point3 == point1 and point3 < median therefore it will point to left node
-        REQUIRE(node.GetChild(point4) == node.GetRightNode()); // point4 == point1 and point4 > median therefore it will point to right node
+        REQUIRE(node.GetChild(point4) == node.GetRightNode()); // point4 == point2 and point4 > median therefore it will point to right node
     }
 
     SECTION("Adding points to split node should be impossible")
     {
         Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
         Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
-        Point<Event,double,3> point3 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point3 = {event3,{event3.Xvertex,event3.Yvertex,event3.Zvertex}};
         
         Node<Event,double,3,SquaredDist> node({point1,point2},nullptr,0,1);
         REQUIRE(node.AddPoint(std::move(point3)) == false); // node is split, AddPoint should return false
@@ -176,6 +176,76 @@ TEST_CASE("Node class tests","[node][point][distance]")
         CHECK(node.size() == 0);
         CHECK(node.IsEmpty());
         REQUIRE(node.GetData().size() == 0); //check again if it was removed from data
+    }
+
+    SECTION("Small enough children will be joined back up to parent")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        Point<Event,double,3> point3 = {event3,{event3.Xvertex,event3.Yvertex,event3.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3},nullptr,0,2);
+
+        CHECK(node.IsSplit());
+        CHECK(node.size() == 0);
+        CHECK(node.GetLeftNode()->size() == 1);
+        CHECK(node.GetRightNode()->size() == 2);
+
+        auto removed_point = node.GetRightNode()->RemovePoint(point1);
+        CHECK(removed_point.has_value());
+        CHECK(removed_point.value() == point1);
+
+        REQUIRE(node.TryJoin());
+
+        REQUIRE_FALSE(node.IsSplit());
+        REQUIRE(node.size() == 2);
+    }
+
+    SECTION("Big enough children will not be joined back up tu parent")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        Point<Event,double,3> point3 = {event3,{event3.Xvertex,event3.Yvertex,event3.Zvertex}};
+        Point<Event,double,3> point4 = {event4,{event4.Xvertex,event4.Yvertex,event4.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3,point4},nullptr,0,2);
+
+        CHECK(node.IsSplit());
+        CHECK(node.size() == 0);
+        CHECK(node.GetLeftNode()->size() == 2);
+        CHECK(node.GetRightNode()->size() == 2);
+
+        // auto removed_point = node.GetRightNode()->RemovePoint(point1);
+        // CHECK(removed_point.has_value());
+        // CHECK(removed_point.value() == point1);
+
+        REQUIRE_FALSE(node.TryJoin());
+
+        REQUIRE(node.IsSplit());
+        REQUIRE(node.size() == 0);
+        REQUIRE(node.GetLeftNode()->size() == 2);
+        REQUIRE(node.GetRightNode()->size() == 2);
+    }
+
+    SECTION("Branches which are not leaves will not be joined")
+    {
+        Point<Event,double,3> point1 = {event1,{event1.Xvertex,event1.Yvertex,event1.Zvertex}};
+        Point<Event,double,3> point2 = {event2,{event2.Xvertex,event2.Yvertex,event2.Zvertex}};
+        Point<Event,double,3> point3 = {event3,{event3.Xvertex,event3.Yvertex,event3.Zvertex}};
+        
+        Node<Event,double,3,SquaredDist> node({point1,point2,point3},nullptr,0,1);
+
+        CHECK(node.IsSplit());
+        CHECK(node.GetRightNode()->IsSplit());
+
+        auto removed_point = node.GetLeftNode()->RemovePoint(point3);
+        CHECK(removed_point.has_value());
+        CHECK(removed_point.value() == point3);
+
+        REQUIRE_FALSE(node.TryJoin());
+
+        REQUIRE(node.IsSplit());
+        REQUIRE(node.GetRightNode()->IsSplit());
     }
 
     SECTION("Nearest point in node which has points")

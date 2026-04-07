@@ -123,7 +123,7 @@
                     }
                     bool TryJoin()
                     {
-                        if (!m_leftNode->IsSplit() && !m_rightNode->IsSplit() && m_leftNode->size() + m_rightNode->size() <= m_bucketSize)
+                        if (!m_leftNode->IsSplit() && !m_rightNode->IsSplit() && (m_leftNode->size() + m_rightNode->size() <= m_bucketSize))
                         {
                             Join();
                             return true;
