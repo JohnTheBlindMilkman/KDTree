@@ -189,16 +189,16 @@ TEST_CASE("Node class tests","[node][point][distance]")
         CHECK(node.IsSplit());
         CHECK(node.size() == 0);
         CHECK(node.GetLeftNode()->size() == 1);
-        CHECK(node.GetRightNode()->size() == 2);
+        CHECK(node.GetRightNode()->size() == 2); // one point went left, two went right
 
         auto removed_point = node.GetRightNode()->RemovePoint(point1);
         CHECK(removed_point.has_value());
-        CHECK(removed_point.value() == point1);
+        CHECK(removed_point.value() == point1); // we have successfully removed the point we wanted
 
-        REQUIRE(node.TryJoin());
+        REQUIRE(node.TryJoin()); // now the total number of elements is equal to bucket, so we will join
 
         REQUIRE_FALSE(node.IsSplit());
-        REQUIRE(node.size() == 2);
+        REQUIRE(node.size() == 2); // check if all is good
     }
 
     SECTION("Big enough children will not be joined back up tu parent")
@@ -213,18 +213,14 @@ TEST_CASE("Node class tests","[node][point][distance]")
         CHECK(node.IsSplit());
         CHECK(node.size() == 0);
         CHECK(node.GetLeftNode()->size() == 2);
-        CHECK(node.GetRightNode()->size() == 2);
+        CHECK(node.GetRightNode()->size() == 2); // split evenly
 
-        // auto removed_point = node.GetRightNode()->RemovePoint(point1);
-        // CHECK(removed_point.has_value());
-        // CHECK(removed_point.value() == point1);
-
-        REQUIRE_FALSE(node.TryJoin());
+        REQUIRE_FALSE(node.TryJoin()); // will not join because there are still too many points
 
         REQUIRE(node.IsSplit());
         REQUIRE(node.size() == 0);
         REQUIRE(node.GetLeftNode()->size() == 2);
-        REQUIRE(node.GetRightNode()->size() == 2);
+        REQUIRE(node.GetRightNode()->size() == 2); // check if all is the same
     }
 
     SECTION("Branches which are not leaves will not be joined")
@@ -236,13 +232,13 @@ TEST_CASE("Node class tests","[node][point][distance]")
         Node<Event,double,3,SquaredDist> node({point1,point2,point3},nullptr,0,1);
 
         CHECK(node.IsSplit());
-        CHECK(node.GetRightNode()->IsSplit());
+        CHECK(node.GetRightNode()->IsSplit()); // right node is split further; left one is a leaf
 
         auto removed_point = node.GetLeftNode()->RemovePoint(point3);
         CHECK(removed_point.has_value());
-        CHECK(removed_point.value() == point3);
+        CHECK(removed_point.value() == point3); // successfully removed point from the left node (now is empty)
 
-        REQUIRE_FALSE(node.TryJoin());
+        REQUIRE_FALSE(node.TryJoin()); // will not join because the right node is still split
 
         REQUIRE(node.IsSplit());
         REQUIRE(node.GetRightNode()->IsSplit());

@@ -4,6 +4,7 @@
     #include <memory>
     #include <algorithm>
     #include <optional>
+    #include <utility>
 
     #include "Metrics.hxx"
     #include "JJUtils.hxx"
@@ -86,11 +87,6 @@
                             Split();
                         }
                     }
-                    // ~Node()
-                    // {
-                    //     delete m_parentNode;
-                    // }
-                    // Node(const Node<Leaf,T,Dims,Distance> &) = default;
                     [[nodiscard]] std::shared_ptr<Node<Leaf,T,Dims,Distance> > GetChild(const Point<Leaf,T,Dims> &point) const noexcept
                     {
                         if (point.coords.at(m_dimensionIndex) > m_median)

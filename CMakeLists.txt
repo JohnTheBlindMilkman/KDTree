@@ -4,7 +4,7 @@ project(KDTree)
 # defining options which can be enabled during building
 option(KDTREE_ENABLE_DOXYGEN "Enable doxygen" OFF)
 option(KDTREE_ENABLE_TESTS "Enable tests" ON)
-option(KDTREE_ENABLE_ASAN "Enable address sanitiser during testing" OFF)
+option(KDTREE_ENABLE_ASAN "Enable address sanitiser during testing" ON)
 
 # enables testing
 if(KDTREE_ENABLE_TESTS)
@@ -27,3 +27,6 @@ add_compile_options(-Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wsign-conver
 
 add_executable(target main.cxx)
 target_include_directories(target PUBLIC "${CMAKE_SOURCE_DIR}/include")
+
+add_executable(target2 main2.cxx)
+target_include_directories(target2 PUBLIC "${CMAKE_SOURCE_DIR}/include")
