@@ -17,28 +17,28 @@ struct Event
 {
     std::size_t id;
     double Xvertex,Yvertex,Zvertex;
-    bool operator==(const Event &other) {return (id == other.id);}
+    [[nodiscard]] bool operator==(const Event &other) const noexcept {return (id == other.id);}
 };
 
 struct OneDim
 {
     std::size_t id;
     double x;
-    bool operator==(const OneDim &other) {return (id == other.id);}
+    [[nodiscard]] bool operator==(const OneDim &other) const noexcept {return (id == other.id);}
 };
 
 struct TwoDim
 {
     std::size_t id;
     double x, y;
-    bool operator==(const TwoDim &other) {return (id == other.id);}
+    [[nodiscard]] bool operator==(const TwoDim &other) const noexcept {return (id == other.id);}
 };
 
 struct ThreeDim
 {
     std::size_t id;
     double x, y, z;
-    bool operator==(const ThreeDim &other) {return (id == other.id);}
+    [[nodiscard]] bool operator==(const ThreeDim &other) const noexcept {return (id == other.id);}
 };
 
 std::ostream& operator<<(std::ostream &stream,const JJDataStruct::KDTree::Point<Event,double,3> &pt)

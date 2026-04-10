@@ -19,7 +19,10 @@
             {
                 Leaf object;
                 std::array<T,Dims> coords;
+                [[nodiscard]] bool operator==(const Point<Leaf,T,Dims> &other) const noexcept {return (object == other.object);}
                 [[nodiscard]] bool operator==(const Point<Leaf,T,Dims> &other) noexcept {return (object == other.object);}
+                [[nodiscard]] bool operator!=(const Point<Leaf,T,Dims> &other) const noexcept {return !(object == other.object);}
+                [[nodiscard]] bool operator!=(const Point<Leaf,T,Dims> &other) noexcept {return !(object == other.object);}
             };
 
         } // namespace KDTree
