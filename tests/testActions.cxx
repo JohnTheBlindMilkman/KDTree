@@ -252,6 +252,22 @@ TEST_CASE("NearestFinder class tests","[node][point][distance][action]")
         REQUIRE(closestPoint.value() == point2); // the point we found is x = 4
         REQUIRE_FALSE(closestPoint.value() == point4); // the point we found is not x = 7
     }
+
+    SECTION("Returns actual closest point because Cond is true")
+    {
+        auto closestPoint = finder.FindIf(node,point2,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return lhs == rhs;});
+        CHECK(closestPoint.has_value()); // make sure that we found a point
+
+        REQUIRE(closestPoint.value() == point2); // the point we found is x = 4
+    }
+
+    SECTION("Returns second closest point because Cond is false")
+    {
+        auto closestPoint = finder.FindIf(node,point2,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return lhs != rhs;});
+        CHECK(closestPoint.has_value()); // make sure that we found a point
+
+        REQUIRE(closestPoint.value() == point1); // the point we found is x = 1
+    }
 }
 
 TEST_CASE("NNearestFinder class tests","[node][point][distance][action]")
@@ -298,6 +314,18 @@ TEST_CASE("NNearestFinder class tests","[node][point][distance][action]")
 
         auto closestPoint = finder.Find(node,newPointOneDim);
         auto nClosestPoints = nFinder.Find(node,newPointOneDim,1);
+
+        CHECK(closestPoint.has_value()); // make sure that we found a point
+        CHECK(nClosestPoints.size() == 1);
+
+        REQUIRE(closestPoint.value() == point2); // the point we found is x = 4
+        REQUIRE(nClosestPoints.at(0) == closestPoint.value()); // finders are consistent
+    }
+
+    SECTION("FindIf for 1 point works the same as NearestFinder")
+    {
+        auto closestPoint = finder.FindIf(node,point2,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return lhs == rhs;});
+        auto nClosestPoints = nFinder.FindIf(node,point2,1,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return lhs == rhs;});
 
         CHECK(closestPoint.has_value()); // make sure that we found a point
         CHECK(nClosestPoints.size() == 1);
@@ -364,6 +392,32 @@ TEST_CASE("NNearestFinder class tests","[node][point][distance][action]")
         REQUIRE(nClosestPoints.at(0) == point2); // the first point we found is x = 4
         REQUIRE(nClosestPoints.at(1) == point3); // the second point we found is x = 7
         REQUIRE(nClosestPoints.at(2) == point4); // the third point we found is x = 8
+    }
+
+    SECTION("Returns actual closest points because Cond is true")
+    {
+        OneDim newObjOneDim{9,5.5}; // has the same ID as point2, in order to remove it
+        Point<OneDim,double,1> newPointOneDim = {newObjOneDim,newObjOneDim.x};
+
+        auto nClosestPoints = nFinder.FindIf(node,newPointOneDim,3,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return true;});
+        CHECK(nClosestPoints.size() == 3); // make sure that we found three points
+
+        REQUIRE(nClosestPoints.at(0) == point2); // the first point we found is x = 4
+        REQUIRE(nClosestPoints.at(1) == point3); // the second point we found is x = 7
+        REQUIRE(nClosestPoints.at(2) == point4); // the third point we found is x = 8
+    }
+
+    SECTION("Returns some other closest points because Cond is false for one of them")
+    {
+        OneDim newObjOneDim{objOneDim2.id,5.5}; // has the same ID as point2, in order to remove it
+        Point<OneDim,double,1> newPointOneDim = {newObjOneDim,newObjOneDim.x};
+
+        auto nClosestPoints = nFinder.FindIf(node,newPointOneDim,3,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return lhs != rhs;});
+        CHECK(nClosestPoints.size() == 3); // make sure that we found three points
+
+        REQUIRE(nClosestPoints.at(0) == point3); // the first point we found is x = 7 and not x = 4 as before
+        REQUIRE(nClosestPoints.at(1) == point4); // the second point we found is x = 8
+        REQUIRE(nClosestPoints.at(2) == point1); // the third point we found is x = 1
     }
 }
 
@@ -454,7 +508,7 @@ TEST_CASE("DistanceFinder class tests","[node][point][distance][action]")
         REQUIRE(closestPoints.size() == 0);
     }
 
-    SECTION("Two points are ath the edge of the hypersphere, but in oppoiste directions")
+    SECTION("Two points are at the edge of the hypersphere, but in oppoiste directions")
     {
         OneDim newObjOneDim{9,13};
         Point<OneDim,double,1> newPointOneDim = {newObjOneDim,newObjOneDim.x};
@@ -491,5 +545,32 @@ TEST_CASE("DistanceFinder class tests","[node][point][distance][action]")
         REQUIRE(closestPoints.at(5) == point6); // the second point we found is x = 14
         REQUIRE(closestPoints.at(6) == point7); // the first point we found is x = 17
         REQUIRE(closestPoints.at(7) == point8); // the second point we found is x = 18
+    }
+
+    SECTION("Finder with condition set to true works the same as if without it")
+    {
+        OneDim newObjOneDim{9,5};
+        Point<OneDim,double,1> newPointOneDim = {newObjOneDim,newObjOneDim.x};
+
+        auto closestPoints = distFinder.Find(node,newPointOneDim,2);
+        auto closestPointsCond = distFinder.FindIf(node,newPointOneDim,2,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return true;});
+
+        CHECK_FALSE(closestPoints.empty()); // make sure that we found a point
+        CHECK(closestPoints.size() == 1);
+        CHECK_FALSE(closestPointsCond.empty()); // make sure that we found a point here too
+        CHECK(closestPointsCond.size() == 1);
+
+        REQUIRE(closestPoints.at(0) == point2); // the point we found is x = 4
+        REQUIRE(closestPoints.at(0) == closestPointsCond.at(0));
+    }
+
+    SECTION("Finder doesn't return a point within distance, because it doesn't meet the condition")
+    {
+        OneDim newObjOneDim{objOneDim2.id,5}; // same ID as for point2
+        Point<OneDim,double,1> newPointOneDim = {newObjOneDim,newObjOneDim.x};
+
+        auto closestPointsCond = distFinder.FindIf(node,newPointOneDim,2,[](const Point<OneDim,double,1> &lhs, const Point<OneDim,double,1> &rhs){return lhs != rhs;});
+
+        REQUIRE(closestPointsCond.empty());
     }
 }

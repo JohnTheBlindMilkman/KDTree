@@ -104,31 +104,47 @@
             class NearestFinder
             {
                 private:
-                    void FindClosestPoint(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, Point<Leaf,T,Dims> &closestPoint, bool &pointWasFound)
+                    void FindClosestPoint(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, Point<Leaf,T,Dims> &closestPoint, bool &pointWasFound) noexcept
                     {      
-                        if (node != nullptr)
+                        if (node->IsSplit())
                         {
-                            if (node->IsSplit())
-                            {
-                                FindClosestPoint(node->GetChild(point), point, closestPoint, pointWasFound);
-                                auto distToMedian = node->CalculateDistanceToMedian(point);
-                                auto distToClosest = (pointWasFound) ? Distance::distance(point,closestPoint) : std::numeric_limits<T>::infinity(); // this is calculated unnecessarily often
-                                
-                                if (distToMedian < distToClosest)
-                                    FindClosestPoint(node->GetOtherChild(point), point, closestPoint, pointWasFound);
-                            }
-                            else if (!node->IsEmpty())
-                            {
-                                pointWasFound = true;
-                                auto newClosestPoint = node->FindNearest(point).value(); // I have a guarantee that I will find a point, because I check if this node is not empty
-                                if (Distance::distance(newClosestPoint,point) < Distance::distance(closestPoint,point))
-                                    closestPoint = newClosestPoint;
-                            }
+                            FindClosestPoint(node->GetChild(point), point, closestPoint, pointWasFound);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            auto distToFurthest = (pointWasFound) ? Distance::distance(point,closestPoint) : std::numeric_limits<T>::infinity(); // this is calculated unnecessarily often
+                            
+                            if (distToMedian < distToFurthest)
+                                FindClosestPoint(node->GetOtherChild(point), point, closestPoint, pointWasFound);
                         }
-                        else
+                        else if (!node->IsEmpty())
                         {
-                            throw std::runtime_error("NearestFinder::FindClosestPoint - Node is nullptr");
+                            pointWasFound = true;
+                            auto newClosestPoint = node->FindNearest(point).value(); // I have a guarantee that I will find a point, because I check if this node is not empty
+                            if (Distance::distance(newClosestPoint,point) < Distance::distance(closestPoint,point))
+                                closestPoint = newClosestPoint;
                         }
+                    }
+
+                    template <typename Cond>
+                    void FindClosestPointIf(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, Point<Leaf,T,Dims> &closestPoint, bool &pointWasFound, Cond cond)
+                    {      
+                        
+                        if (node->IsSplit())
+                        {
+                            FindClosestPointIf<Cond>(node->GetChild(point), point, closestPoint, pointWasFound, cond);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            auto distToFurthest = (pointWasFound) ? Distance::distance(point,closestPoint) : std::numeric_limits<T>::infinity(); // this is calculated unnecessarily often
+                            
+                            if (distToMedian < distToFurthest)
+                                FindClosestPointIf<Cond>(node->GetOtherChild(point), point, closestPoint, pointWasFound, cond);
+                        }
+                        else if (!node->IsEmpty())
+                        {
+                            pointWasFound = true;
+                            auto newClosestPoint = node->FindNearest(point).value(); // I have a guarantee that I will find a point, because I check if this node is not empty
+                            if (Distance::distance(newClosestPoint,point) < Distance::distance(closestPoint,point) && cond(point,newClosestPoint))
+                                closestPoint = newClosestPoint;
+                        }
+                       
                     }
 
                 public:
@@ -138,15 +154,50 @@
                      * @param node starting node (top of the tree)
                      * @param point point to match against
                      * @return closest point or std::nullopt if no point was found in the tree
+                     * @throws runtime_error if node is nullptr
                      */
                     std::optional<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point)
                     {
+                        if (node != nullptr)
+                        {
+                            Point<Leaf,T,Dims> closestPoint = {Leaf(), {}};
+
+                            bool pointWasFound = false;
+                            FindClosestPoint(node, point, closestPoint, pointWasFound);
+
+                            return (pointWasFound) ? std::optional<Point<Leaf,T,Dims> >{closestPoint} : std::nullopt;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("NearestFinder::Find - Node is nullptr");
+                        }
+                    }
+                    /**
+                     * @brief Find closest point in the tree for which condition cond is true
+                     * 
+                     * @tparam Cond function of signature (Point,Point) -> bool
+                     * @param node starting node (top of the tree)
+                     * @param point point to match against
+                     * @param cond binary predicate which returns ​true for the required elements
+                     * @return std::optional<Point<Leaf,T,Dims> > 
+                     * @throws runtime_error if node is nullptr
+                     */
+                    template <typename Cond>
+                    std::optional<Point<Leaf,T,Dims> > FindIf(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, Cond cond)
+                    {
+                        if (node != nullptr)
+                        {
                         Point<Leaf,T,Dims> closestPoint = {Leaf(), {}};
 
                         bool pointWasFound = false;
-                        FindClosestPoint(node, point, closestPoint, pointWasFound);
+                        FindClosestPointIf<Cond>(node, point, closestPoint, pointWasFound, cond);
 
                         return (pointWasFound) ? std::optional<Point<Leaf,T,Dims> >{closestPoint} : std::nullopt;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("NearestFinder::FindIf - Node is nullptr");
+                        }
                     }
             };
 
@@ -162,30 +213,43 @@
             class NNearestFinder
             {
                 private:
-                    void FindAtLeastNClosestPoints(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, unsigned nPoints)
+                    void FindAtLeastNClosestPoints(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, unsigned nPoints) noexcept
                     {
-                        if (node != nullptr)
+                        if (node->IsSplit())
                         {
-                            if (node->IsSplit())
-                            {
-                                FindAtLeastNClosestPoints(node->GetChild(point), point, closestPoints, nPoints);
-                                auto distToMedian = node->CalculateDistanceToMedian(point);
-                                auto distToClosest = (closestPoints.empty()) ? std::numeric_limits<T>::infinity()  : Distance::distance(point,closestPoints.back()); // this is calculated unnecessarily often
-                                
-                                if (distToMedian < distToClosest || closestPoints.size() < nPoints)
-                                    FindAtLeastNClosestPoints(node->GetOtherChild(point), point, closestPoints, nPoints);
-                            }
-                            else
-                            {
-                                auto newClosestPoints = node->FindNNearest(point,nPoints);
-                                closestPoints.insert(closestPoints.end(),newClosestPoints.begin(),newClosestPoints.end());
-                                std::sort(closestPoints.begin(),closestPoints.end(),
-                                    [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs){return Distance::distance(point,lhs) < Distance::distance(point,rhs);});
-                            }
+                            FindAtLeastNClosestPoints(node->GetChild(point), point, closestPoints, nPoints);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            auto distToFurthest = (closestPoints.empty()) ? std::numeric_limits<T>::infinity()  : Distance::distance(point,closestPoints.back()); // this is calculated unnecessarily often
+                            
+                            if (distToMedian < distToFurthest || closestPoints.size() < nPoints)
+                                FindAtLeastNClosestPoints(node->GetOtherChild(point), point, closestPoints, nPoints);
                         }
                         else
                         {
-                            throw std::runtime_error("NNearestFinder::FindAtLeastNClosestPoints - Node is nullptr");
+                            auto newClosestPoints = node->FindNNearest(point,nPoints);
+                            closestPoints.insert(closestPoints.end(),newClosestPoints.begin(),newClosestPoints.end());
+                            std::sort(closestPoints.begin(),closestPoints.end(),
+                                [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs){return Distance::distance(point,lhs) < Distance::distance(point,rhs);});
+                        }
+                    }
+                    template <typename Cond>
+                    void FindAtLeastNClosestPointsIf(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, unsigned nPoints, Cond cond) noexcept
+                    {
+                        if (node->IsSplit())
+                        {
+                            FindAtLeastNClosestPointsIf<Cond>(node->GetChild(point), point, closestPoints, nPoints, cond);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            auto distToFurthest = (closestPoints.empty()) ? std::numeric_limits<T>::infinity()  : Distance::distance(point,closestPoints.back()); // this is calculated unnecessarily often
+                            
+                            if (distToMedian < distToFurthest || closestPoints.size() < nPoints)
+                                FindAtLeastNClosestPointsIf<Cond>(node->GetOtherChild(point), point, closestPoints, nPoints, cond);
+                        }
+                        else
+                        {
+                            auto newClosestPoints = node->FindNNearest(point,nPoints);
+                            std::copy_if(newClosestPoints.begin(),newClosestPoints.end(),std::back_inserter(closestPoints),[&point,&cond](const Point<Leaf,T,Dims> &p){return cond(p,point);});
+                            std::sort(closestPoints.begin(),closestPoints.end(),
+                                [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs){return Distance::distance(point,lhs) < Distance::distance(point,rhs);});
                         }
                     }
 
@@ -197,19 +261,59 @@
                      * @param point point to match against
                      * @param nPoints number of closest points to look for
                      * @return a vector of N closest points or less (if there were not enough points)
+                     * @throws runtime_error if node is nullptr
                      */
                     std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, unsigned nPoints)
                     {
-                        std::vector<Point<Leaf,T,Dims> > closestPoints;
+                        if (node != nullptr)
+                        {
+                            std::vector<Point<Leaf,T,Dims> > closestPoints;
 
-                        FindAtLeastNClosestPoints(node,point,closestPoints,nPoints);
-                        std::sort(closestPoints.begin(),closestPoints.end(),
-                                [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs)
-                                {
-                                    return Distance::distance(point,lhs) < Distance::distance(point,rhs);
-                                });
+                            FindAtLeastNClosestPoints(node,point,closestPoints,nPoints);
+                            std::sort(closestPoints.begin(),closestPoints.end(),
+                                    [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs)
+                                    {
+                                        return Distance::distance(point,lhs) < Distance::distance(point,rhs);
+                                    });
 
-                        return (closestPoints.size() > nPoints) ? std::vector<Point<Leaf,T,Dims> >(closestPoints.begin(),closestPoints.begin() + nPoints) : closestPoints;
+                            return (closestPoints.size() > nPoints) ? std::vector<Point<Leaf,T,Dims> >(closestPoints.begin(),closestPoints.begin() + nPoints) : closestPoints;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("NNearestFinder::Find - Node is nullptr");
+                        }
+                    }
+                    /**
+                     * @brief Find N closest points in a tree for which condition cond is true
+                     * 
+                     * @tparam Cond function of signature (Point,Point) -> bool
+                     * @param node starting node (top of the tree)
+                     * @param point point to match against
+                     * @param nPoints number of closest points to look for
+                     * @param cond binary predicate which returns ​true for the required elements
+                     * @return a vector of N closest points or less (if there were not enough points)
+                     * @throws runtime_error if node is nullptr
+                     */
+                    template <typename Cond>
+                    std::vector<Point<Leaf,T,Dims> > FindIf(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, unsigned nPoints, Cond cond)
+                    {
+                        if (node != nullptr)
+                        {
+                            std::vector<Point<Leaf,T,Dims> > closestPoints;
+
+                            FindAtLeastNClosestPointsIf<Cond>(node,point,closestPoints,nPoints,cond);
+                            std::sort(closestPoints.begin(),closestPoints.end(),
+                                    [&point](const Point<Leaf,T,Dims> &lhs, const Point<Leaf,T,Dims> &rhs)
+                                    {
+                                        return Distance::distance(point,lhs) < Distance::distance(point,rhs);
+                                    });
+
+                            return (closestPoints.size() > nPoints) ? std::vector<Point<Leaf,T,Dims> >(closestPoints.begin(),closestPoints.begin() + nPoints) : closestPoints;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("NNearestFinder::FindIf - Node is nullptr");
+                        }
                     }
             };
 
@@ -225,27 +329,37 @@
             class DistanceFinder
             {
                 private:
-                    void FindWithinDistance(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, T distance)
+                    void FindWithinDistance(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, T distance) noexcept
                     {
-                        if (node != nullptr)
+                        if (node->IsSplit())
                         {
-                            if (node->IsSplit())
-                            {
-                                FindWithinDistance(node->GetChild(point), point, closestPoints, distance);
-                                auto distToMedian = node->CalculateDistanceToMedian(point);
-                                
-                                if (distToMedian < distance)
-                                    FindWithinDistance(node->GetOtherChild(point), point, closestPoints, distance);
-                            }
-                            else
-                            {
-                                auto newClosestPoints = node->FindWithinDistance(point,distance);
-                                closestPoints.insert(closestPoints.end(),newClosestPoints.begin(),newClosestPoints.end());
-                            }
+                            FindWithinDistance(node->GetChild(point), point, closestPoints, distance);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            
+                            if (distToMedian < distance)
+                                FindWithinDistance(node->GetOtherChild(point), point, closestPoints, distance);
                         }
                         else
                         {
-                            throw std::runtime_error("DistanceFinder::FindWithinDistance - Node is nullptr");
+                            auto newClosestPoints = node->FindWithinDistance(point,distance);
+                            closestPoints.insert(closestPoints.end(),newClosestPoints.begin(),newClosestPoints.end());
+                        }
+                    }
+                    template <typename Cond>
+                    void FindWithinDistanceIf(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, std::vector<Point<Leaf,T,Dims> > &closestPoints, T distance, Cond cond) noexcept
+                    {
+                        if (node->IsSplit())
+                        {
+                            FindWithinDistanceIf<Cond>(node->GetChild(point), point, closestPoints, distance, cond);
+                            auto distToMedian = node->CalculateDistanceToMedian(point);
+                            
+                            if (distToMedian < distance)
+                                FindWithinDistanceIf<Cond>(node->GetOtherChild(point), point, closestPoints, distance, cond);
+                        }
+                        else
+                        {
+                            auto newClosestPoints = node->FindWithinDistance(point,distance);
+                            std::copy_if(newClosestPoints.begin(),newClosestPoints.end(),std::back_inserter(closestPoints),[&point,&cond](const Point<Leaf,T,Dims> &p){return cond(p,point);});
                         }
                     }
 
@@ -257,12 +371,45 @@
                      * @param point point to match agains
                      * @param distance maximum distance
                      * @return a vector of all points within given distance 
+                     * @throws runtime_error if node is nullptr
                      */
                     std::vector<Point<Leaf,T,Dims> > Find(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, T distance)
                     {
-                        std::vector<Point<Leaf,T,Dims> > closestPoints;
-                        FindWithinDistance(node,point,closestPoints,distance);
-                        return closestPoints;
+                        if (node != nullptr)
+                        {
+                            std::vector<Point<Leaf,T,Dims> > closestPoints;
+                            FindWithinDistance(node,point,closestPoints,distance);
+                            return closestPoints;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("DistanceFinder::Find - Node is nullptr");
+                        }
+                    }
+                    /**
+                     * @brief Find all points withing given distance for which condition cond is true
+                     * 
+                     * @tparam Cond function of signature (Point,Point) -> bool
+                     * @param node starting node (top of the tree)
+                     * @param point point to match agains
+                     * @param distance maximum distance
+                     * @param cond binary predicate which returns ​true for the required elements
+                     * @return a vector of all points within given distance 
+                     * @throws runtime_error if node is nullptr
+                     */
+                    template <typename Cond>
+                    std::vector<Point<Leaf,T,Dims> > FindIf(const std::shared_ptr<Node<Leaf,T,Dims,Distance> > &node, const Point<Leaf,T,Dims> &point, T distance, Cond cond)
+                    {
+                        if (node != nullptr)
+                        {
+                            std::vector<Point<Leaf,T,Dims> > closestPoints;
+                            FindWithinDistanceIf<Cond>(node,point,closestPoints,distance,cond);
+                            return closestPoints;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("DistanceFinder::FindIf - Node is nullptr");
+                        }
                     }
             };
 
