@@ -179,7 +179,7 @@
                      * @param node starting node (top of the tree)
                      * @param point point to match against
                      * @param cond binary predicate which returns ​true for the required elements
-                     * @return std::optional<Point<Leaf,T,Dims> > 
+                     * @return closest point or std::nullopt if no point was found in the tree
                      * @throws runtime_error if node is nullptr
                      */
                     template <typename Cond>
