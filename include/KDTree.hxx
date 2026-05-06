@@ -176,14 +176,13 @@
                      * @brief Find the nearest point. Utilises the KDTree unique structure to search only in the vicinity of provided point
                      * 
                      * @param pt Point to which the distance should be the smallest
-                     * @return Point<Leaf,T,Dims> 
+                     * @return closest point or std::nullopt if no point was found in the tree
                      */
                     [[nodiscard]] std::optional<Point<Leaf,T,Dims> > FindNearest(const Point<Leaf,T,Dims> &pt)
                     {
                         if (m_rootNode == nullptr)
                         {
-                            std::cerr << "Tree is not split\n";
-                            return {};
+                            return std::nullopt;
                         }
                         else
                         {
@@ -191,22 +190,62 @@
                         }
                     }
                     /**
+                     * @brief Find closest point in the tree for which condition cond is true
+                     * 
+                     * @tparam Cond function of signature (Point,Point) -> bool
+                     * @param pt Point to which the distance should be the smallest
+                     * @param cond binary predicate which returns ​true for the required elements
+                     * @return closest point or std::nullopt if no point was found in the tree
+                     */
+                    template <typename Cond>
+                    [[nodiscard]] std::optional<Point<Leaf,T,Dims> > FindNearestIf(const Point<Leaf,T,Dims> &pt, Cond &&cond)
+                    {
+                        if (m_rootNode == nullptr)
+                        {
+                            return std::nullopt;
+                        }
+                        else
+                        {
+                            return m_nearestFinder.FindIf(m_rootNode,pt,std::forward<Cond>(cond));
+                        }
+                    }
+                    /**
                      * @brief Find the N nearest points
                      * 
                      * @param pt Point to which the distance should be the smallest
                      * @param nPoints Number of closest points
-                     * @return std::vector<Point<Leaf,T,Dims> > 
+                     * @return a vector of N closest points or less (if there were not enough points)
                      */
                     [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearest(const Point<Leaf,T,Dims> &pt, unsigned nPoints)
                     {
                         if (m_rootNode == nullptr)
                         {
-                            std::cerr << "Tree is not split\n";
                             return {};
                         }
                         else
                         {
                             return m_nNearestFinder.Find(m_rootNode,pt,nPoints);
+                        }
+                    }
+                    /**
+                     * @brief Find the N nearest points for which condition cond is true
+                     * 
+                     * @tparam Cond Cond function of signature (Point,Point) -> bool
+                     * @param pt Point to which the distance should be the smallest
+                     * @param nPoints Number of closest points
+                     * @param cond binary predicate which returns ​true for the required elements
+                     * @return a vector of N closest points or less (if there were not enough points)
+                     */
+                    template <typename Cond>
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindNNearestIf(const Point<Leaf,T,Dims> &pt, unsigned nPoints, Cond &&cond)
+                    {
+                        if (m_rootNode == nullptr)
+                        {
+                            return {};
+                        }
+                        else
+                        {
+                            return m_nNearestFinder.FindIf(m_rootNode,pt,nPoints,std::forward<Cond>(cond));
                         }
                     }
                     /**
@@ -226,6 +265,27 @@
                         else
                         {
                             return m_distanceFinder.Find(m_rootNode,point,dist);
+                        }
+                    }
+                    /**
+                     * @brief Find all points within distance for which condition cond is true
+                     * 
+                     * @tparam Cond Cond Cond function of signature (Point,Point) -> bool
+                     * @param point Reference point (center of the sphere)
+                     * @param dist Maximal distance from point (radius of the sphere)
+                     * @param cond binary predicate which returns ​true for the required elements
+                     * @return std::vector<Point<Leaf,T,Dims> > 
+                     */
+                    template <typename Cond>
+                    [[nodiscard]] std::vector<Point<Leaf,T,Dims> > FindWithinDistanceIf(const Point<Leaf,T,Dims> &point, T dist, Cond &&cond)
+                    {
+                        if (m_rootNode == nullptr)
+                        {
+                            return {};
+                        }
+                        else
+                        {
+                            return m_distanceFinder.FindIf(m_rootNode,point,dist,std::forward<Cond>(cond));
                         }
                     }
                     /**
